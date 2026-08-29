@@ -232,6 +232,22 @@
 <script>
     let productData = {};
 
+    // Load data from localStorage on page startup if available
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedData = localStorage.getItem('kohnan_product_data');
+        const savedTimestamp = localStorage.getItem('kohnan_data_timestamp');
+        
+        if (savedData) {
+            try {
+                productData = JSON.parse(savedData);
+                const count = Object.keys(productData).length / 2; // Each item usually has barcode1 and barcode2
+                document.getElementById('status').innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã khôi phục dữ liệu đã lưu trước đó (${count} sản phẩm - Cập nhật: ${savedTimestamp || 'N/A'})`;
+            } catch(e) {
+                console.error("Error parsing saved data", e);
+            }
+        }
+    });
+
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -260,7 +276,17 @@
                         productData[barcode2] = itemInfo;
                     }
                 });
-                document.getElementById('status').innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã tải thành công dữ liệu sản phẩm!';
+
+                // Save to localStorage so it persists on F5 reload
+                try {
+                    localStorage.setItem('kohnan_product_data', JSON.stringify(productData));
+                    const nowStr = new Date().toLocaleString('vi-VN');
+                    localStorage.setItem('kohnan_data_timestamp', nowStr);
+                } catch(err) {
+                    console.warn("Storage quota exceeded or unavailable", err);
+                }
+
+                document.getElementById('status').innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã tải và lưu thành công dữ liệu sản phẩm!';
             }
         });
     });
