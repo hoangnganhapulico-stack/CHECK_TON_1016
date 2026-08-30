@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -5,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tra Cứu Tồn Kho & Giá Bán</title>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -148,6 +150,15 @@
             transform: translateY(-2px);
             box-shadow: 0 12px 25px rgba(2, 132, 199, 0.5);
         }
+        button.secondary {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
+            margin-top: 10px;
+        }
+        button.secondary:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+            box-shadow: 0 12px 25px rgba(239, 68, 68, 0.5);
+        }
         .result-box {
             background: #ffffff;
             padding: 24px;
@@ -205,11 +216,12 @@
         <h2>Tra Cứu Tồn Kho & Giá Bán</h2>
         <div class="subtitle">Hệ thống kiểm tra thông tin hàng hóa nhanh chóng, chuẩn xác</div>
     </div>
-    
+
     <div class="section">
-        <label><i class="fa-solid fa-file-arrow-up text-sky-600"></i> 1. Tải file dữ liệu hàng ngày (.csv / .txt):</label>
-        <input type="file" id="csvFile" accept=".csv, .txt">
+        <label><i class="fa-solid fa-file-arrow-up text-sky-600"></i> 1. Tải file dữ liệu hàng ngày (.xlsx / .xls / .csv / .txt):</label>
+        <input type="file" id="csvFile" accept=".csv, .txt, .xlsx, .xls">
         <div id="status" class="success-msg"></div>
+        <button class="secondary" onclick="clearData()"><i class="fa-solid fa-trash"></i> Xóa Dữ Liệu Đã Lưu</button>
     </div>
 
     <div class="section">
@@ -220,12 +232,13 @@
 
     <div class="result-box" id="resultArea" style="display:none;">
         <h3><i class="fa-solid fa-circle-check text-emerald-500"></i> Kết Quả Tra Cứu:</h3>
+        <p><b><i class="fa-solid fa-barcode text-slate-400"></i> Mã sản phẩm:</b> <span id="resCode" style="font-family: monospace; color: #0284c7; font-weight: 700;"></span></p>
         <p><b><i class="fa-solid fa-box text-slate-400"></i> Tên sản phẩm:</b> <span id="resName" class="highlight" style="text-align: right; max-width: 60%;"></span></p>
-        <p><b><i class="fa-solid fa-barcode text-slate-400"></i> Barcode:</b> <span id="resCode" style="font-family: monospace; color: #0284c7; font-weight: 700;"></span></p>
         <p><b><i class="fa-solid fa-hashtag text-slate-400"></i> Mã NCC:</b> <span id="resSuppCode" style="font-weight: 600;"></span></p>
         <p><b><i class="fa-solid fa-building text-slate-400"></i> Tên NCC:</b> <span id="resSuppName" style="font-weight: 600;"></span></p>
         <p><b><i class="fa-solid fa-warehouse text-slate-400"></i> Số lượng tồn kho:</b> <span id="resStock" class="highlight" style="font-size:20px;"></span></p>
         <p><b><i class="fa-solid fa-tag text-slate-400"></i> Giá bán:</b> <span id="resPrice" class="highlight" style="font-size:20px; color: #16a34a;"></span> VNĐ</p>
+        <p><b><i class="fa-solid fa-percent text-slate-400"></i> Giá khuyến mãi:</b> <span id="resPromo" style="font-size:20px; font-weight:800; color: #ea580c;"></span></p>
     </div>
 </div>
 
@@ -236,12 +249,12 @@
     window.addEventListener('DOMContentLoaded', () => {
         const savedData = localStorage.getItem('kohnan_product_data');
         const savedTimestamp = localStorage.getItem('kohnan_data_timestamp');
-        
+
         if (savedData) {
             try {
                 productData = JSON.parse(savedData);
-                const count = Object.keys(productData).length / 2; // Each item usually has barcode1 and barcode2
-                document.getElementById('status').innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã khôi phục dữ liệu đã lưu trước đó (${count} sản phẩm - Cập nhật: ${savedTimestamp || 'N/A'})`;
+                const count = Object.keys(productData).length;
+                document.getElementById('status').innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã khôi phục dữ liệu đã lưu trước đó (${count} mã sản phẩm - Cập nhật: ${savedTimestamp || 'N/A'})`;
             } catch(e) {
                 console.error("Error parsing saved data", e);
             }
@@ -253,43 +266,94 @@
         if (!file) return;
 
         document.getElementById('status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...';
-        
-        Papa.parse(file, {
-            delimiter: "\t",
-            skipEmptyLines: true,
-            complete: function(results) {
-                productData = {};
-                results.data.forEach(row => {
-                    if (row.length >= 11) {
-                        let barcode1 = String(row[0]).trim();
-                        let barcode2 = String(row[2]).trim();
-                        
-                        let itemInfo = {
-                            name: row[3],
-                            suppCode: row[4],  // Cột 4: Mã NCC chuẩn
-                            suppName: row[5],  // Cột 5: Tên NCC chuẩn
-                            price: row[8],     // Cột 8: Giá bán
-                            stock: row[10]     // Cột 10 hoặc 11 là tồn kho
-                        };
-                        
-                        productData[barcode1] = itemInfo;
-                        productData[barcode2] = itemInfo;
-                    }
-                });
 
-                // Save to localStorage so it persists on F5 reload
+        const fileName = file.name.toLowerCase();
+        const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
+        if (isExcel) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
                 try {
-                    localStorage.setItem('kohnan_product_data', JSON.stringify(productData));
-                    const nowStr = new Date().toLocaleString('vi-VN');
-                    localStorage.setItem('kohnan_data_timestamp', nowStr);
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    // header:1 -> mảng các mảng, giữ đúng thứ tự cột như file gốc (giống Papa.parse)
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: true });
+                    processRows(rows);
                 } catch(err) {
-                    console.warn("Storage quota exceeded or unavailable", err);
+                    console.error("Error reading Excel file", err);
+                    document.getElementById('status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Lỗi đọc file Excel!';
                 }
-
-                document.getElementById('status').innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã tải và lưu thành công dữ liệu sản phẩm!';
-            }
-        });
+            };
+            reader.onerror = function() {
+                document.getElementById('status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Không thể đọc file!';
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            Papa.parse(file, {
+                delimiter: "\t",
+                skipEmptyLines: true,
+                complete: function(results) {
+                    processRows(results.data);
+                }
+            });
+        }
     });
+
+    function processRows(rows) {
+        productData = {};
+        rows.forEach(row => {
+            // Cần tối thiểu 13 cột để lấy tới cột M (Rate/Amount Value)
+            if (!row || row.length < 13) return;
+
+            let barcodeRaw = String(row[0]).trim();
+
+            // Bỏ qua dòng tiêu đề (header) hoặc dòng không phải mã vạch hợp lệ
+            if (!barcodeRaw || !/^\d+$/.test(barcodeRaw)) return;
+
+            let itemInfo = {
+                name: row[3],       // Cột D: Item Name
+                suppCode: row[4],   // Cột E: Supplier Code
+                suppName: row[5],   // Cột F: Supplier Name
+                price: row[8],      // Cột I: Sales Unit Price(Tax incl.)
+                stock: row[11],     // Cột L: Close Qty
+                promo: row[12]      // Cột M: Rate/Amount Value
+            };
+
+            productData[barcodeRaw] = itemInfo;
+        });
+
+        // Save to localStorage so it persists on F5 reload
+        try {
+            localStorage.setItem('kohnan_product_data', JSON.stringify(productData));
+            const nowStr = new Date().toLocaleString('vi-VN');
+            localStorage.setItem('kohnan_data_timestamp', nowStr);
+        } catch(err) {
+            console.warn("Storage quota exceeded or unavailable", err);
+        }
+
+        const count = Object.keys(productData).length;
+        if (count > 0) {
+            document.getElementById('status').innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã tải và lưu thành công dữ liệu sản phẩm! (${count} mã sản phẩm)`;
+        } else {
+            document.getElementById('status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Không tìm thấy dữ liệu hợp lệ trong file!';
+        }
+    }
+
+    function clearData() {
+        localStorage.removeItem('kohnan_product_data');
+        localStorage.removeItem('kohnan_data_timestamp');
+        productData = {};
+        document.getElementById('status').innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã xóa dữ liệu đã lưu.';
+        document.getElementById('resultArea').style.display = 'none';
+    }
+
+    function formatMoney(val) {
+        let n = Number(val);
+        if (isNaN(n)) return val;
+        return n.toLocaleString('vi-VN');
+    }
 
     function searchProduct() {
         let code = document.getElementById('manualInput').value.trim();
@@ -300,12 +364,22 @@
 
         if (productData[code]) {
             let p = productData[code];
-            document.getElementById('resName').innerText = p.name;
             document.getElementById('resCode').innerText = code;
+            document.getElementById('resName').innerText = p.name;
             document.getElementById('resSuppCode').innerText = p.suppCode;
             document.getElementById('resSuppName').innerText = p.suppName;
             document.getElementById('resStock').innerText = p.stock;
-            document.getElementById('resPrice').innerText = Number(p.price).toLocaleString('vi-VN');
+            document.getElementById('resPrice').innerText = formatMoney(p.price);
+
+            let promoEl = document.getElementById('resPromo');
+            if (p.promo === undefined || p.promo === null || p.promo === '' || Number(p.promo) === 0) {
+                promoEl.innerText = 'Không áp dụng';
+                promoEl.style.color = '#94a3b8';
+            } else {
+                promoEl.innerText = formatMoney(p.promo) + ' VNĐ';
+                promoEl.style.color = '#ea580c';
+            }
+
             document.getElementById('resultArea').style.display = 'block';
         } else {
             showCustomMessage("Không tìm thấy mã sản phẩm này!");
