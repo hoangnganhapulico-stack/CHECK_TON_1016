@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 <style>
     :root {
         --bg-a: #e0f2fe;
@@ -515,13 +517,18 @@
     let lastScanCode = null;
     let lastScanTime = 0;
 
-    function isStorageAvailable() {
+    // Lưu trữ bằng IndexedDB (qua localForage) thay vì localStorage — localStorage chỉ
+    // cho phép khoảng 5-10MB mỗi trang nên với file có hàng chục nghìn mã sản phẩm sẽ
+    // bị từ chối lưu (thường là âm thầm, không báo lỗi) trên nhiều trình duyệt di động.
+    const store = localforage.createInstance({ name: 'kohnan_ton_kho', storeName: 'product_data' });
+
+    async function checkStorageAvailable() {
         try {
             const k = '__kohnan_probe__';
-            localStorage.setItem(k, '1');
-            const ok = localStorage.getItem(k) === '1';
-            localStorage.removeItem(k);
-            return ok;
+            await store.setItem(k, '1');
+            const v = await store.getItem(k);
+            await store.removeItem(k);
+            return v === '1';
         } catch (e) {
             return false;
         }
@@ -537,22 +544,44 @@
         document.getElementById('storageWarning').style.display = 'none';
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        if (!isStorageAvailable()) {
+    // Chuyển dữ liệu cũ (nếu có) từ localStorage sang IndexedDB — chỉ áp dụng cho
+    // dữ liệu nhỏ đã từng lưu thành công trước đây; không ảnh hưởng nếu chưa có gì.
+    async function migrateLegacyLocalStorage() {
+        try {
+            const already = await store.getItem('kohnan_product_data');
+            if (already) return;
+            const legacy = localStorage.getItem('kohnan_product_data');
+            if (!legacy) return;
+            const parsed = JSON.parse(legacy);
+            await store.setItem('kohnan_product_data', parsed);
+            const legacyTs = localStorage.getItem('kohnan_data_timestamp');
+            if (legacyTs) await store.setItem('kohnan_data_timestamp', legacyTs);
+            localStorage.removeItem('kohnan_product_data');
+            localStorage.removeItem('kohnan_data_timestamp');
+        } catch (e) {
+            console.warn('Bỏ qua di chuyển dữ liệu cũ', e);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const available = await checkStorageAvailable();
+        if (!available) {
             showStorageWarning('Trình duyệt đang CHẶN lưu trữ dữ liệu trên thiết bị này — thường do đang mở ở chế độ Ẩn danh/Riêng tư (Private/Incognito), hoặc trình duyệt có bật "Xoá dữ liệu duyệt web khi đóng tab". Vì vậy dữ liệu tải lên sẽ mất mỗi khi tải lại trang. Hãy mở trang bằng tab thường (không ẩn danh) và tắt tính năng tự xoá dữ liệu duyệt web trong phần Cài đặt quyền riêng tư của trình duyệt.');
             return;
         }
 
-        const savedData = localStorage.getItem('kohnan_product_data');
-        const savedTimestamp = localStorage.getItem('kohnan_data_timestamp');
-        if (savedData) {
-            try {
-                productData = JSON.parse(savedData);
+        await migrateLegacyLocalStorage();
+
+        try {
+            const saved = await store.getItem('kohnan_product_data');
+            const savedTimestamp = await store.getItem('kohnan_data_timestamp');
+            if (saved) {
+                productData = saved;
                 const count = Object.keys(productData).length;
                 setStatus(`Đã khôi phục dữ liệu đã lưu (${count} mã sản phẩm - cập nhật ${savedTimestamp || 'N/A'})`, 'ok', 'i-check');
-            } catch (e) {
-                console.error('Error parsing saved data', e);
             }
+        } catch (e) {
+            console.error('Error loading saved data', e);
         }
     });
 
@@ -590,7 +619,7 @@
         }
     });
 
-    function processRows(rows) {
+    async function processRows(rows) {
         productData = {};
         rows.forEach(row => {
             if (!row || row.length < 13) return;
@@ -607,32 +636,30 @@
             };
         });
 
-        let savedOk = false;
-        try {
-            localStorage.setItem('kohnan_product_data', JSON.stringify(productData));
-            localStorage.setItem('kohnan_data_timestamp', new Date().toLocaleString('vi-VN'));
-            savedOk = localStorage.getItem('kohnan_product_data') !== null;
-        } catch (err) {
-            console.warn('Storage quota exceeded or unavailable', err);
-            showStorageWarning('Đã đọc được file nhưng KHÔNG lưu được vào bộ nhớ trình duyệt (' + (err && err.name ? err.name : 'lỗi không xác định') + '). Dữ liệu sẽ mất khi tải lại trang — kiểm tra chế độ Ẩn danh/Riêng tư hoặc dung lượng lưu trữ của trình duyệt.');
-        }
-
-        if (savedOk) hideStorageWarning();
-        else if (Object.keys(productData).length > 0) {
-            showStorageWarning('Đã đọc được file nhưng trình duyệt không lưu lại được dữ liệu. Dữ liệu sẽ mất khi tải lại trang — kiểm tra chế độ Ẩn danh/Riêng tư hoặc cài đặt tự xoá dữ liệu duyệt web.');
-        }
-
         const count = Object.keys(productData).length;
-        if (count > 0) {
-            setStatus(`Đã tải và lưu thành công! (${count} mã sản phẩm)`, 'ok', 'i-check');
-        } else {
+
+        if (count === 0) {
             setStatus('Không tìm thấy dữ liệu hợp lệ trong file!', 'err', 'i-alert');
+            return;
+        }
+
+        setStatus(`Đang lưu ${count.toLocaleString('vi-VN')} mã sản phẩm...`, 'busy', 'i-loader', true);
+
+        try {
+            await store.setItem('kohnan_product_data', productData);
+            await store.setItem('kohnan_data_timestamp', new Date().toLocaleString('vi-VN'));
+            hideStorageWarning();
+            setStatus(`Đã tải và lưu thành công! (${count.toLocaleString('vi-VN')} mã sản phẩm)`, 'ok', 'i-check');
+        } catch (err) {
+            console.warn('Storage write failed', err);
+            showStorageWarning('Đã đọc được file (' + count.toLocaleString('vi-VN') + ' mã) nhưng KHÔNG lưu được vào bộ nhớ trình duyệt (' + (err && err.message ? err.message : 'lỗi không xác định') + '). Bạn vẫn tra cứu được cho tới khi tải lại trang, nhưng dữ liệu sẽ mất sau khi F5.');
+            setStatus(`Đã đọc file nhưng chưa lưu được (${count.toLocaleString('vi-VN')} mã, dùng tạm trong phiên này)`, 'err', 'i-alert');
         }
     }
 
-    function clearData() {
-        localStorage.removeItem('kohnan_product_data');
-        localStorage.removeItem('kohnan_data_timestamp');
+    async function clearData() {
+        await store.removeItem('kohnan_product_data');
+        await store.removeItem('kohnan_data_timestamp');
         productData = {};
         setStatus('Đã xoá dữ liệu đã lưu.', 'ok', 'i-check');
         document.getElementById('resultArea').style.display = 'none';
