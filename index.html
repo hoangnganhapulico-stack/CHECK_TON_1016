@@ -2,301 +2,545 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra Cứu Tồn Kho & Giá Bán</title>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', Arial, sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 50%, #fef3c7 100%),
-                        radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.2) 0%, transparent 40%),
-                        radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.15) 0%, transparent 40%);
-            background-blend-mode: overlay;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px 15px;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kohnan Tồn Kho</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+    :root {
+        --bg-a: #e0f2fe;
+        --bg-b: #fef3c7;
+        --bg-glow-1: rgba(56, 189, 248, 0.20);
+        --bg-glow-2: rgba(245, 158, 11, 0.15);
+        --surface: rgba(255, 255, 255, 0.92);
+        --surface-solid: #ffffff;
+        --surface-soft: #f8fafc;
+        --surface-soft-hover: #ffffff;
+        --card-border: rgba(255, 255, 255, 0.9);
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --text: #1e293b;
+        --text-strong: #0f172a;
+        --text-muted: #64748b;
+        --text-faint: #94a3b8;
+        --accent: #0284c7;
+        --accent-strong: #0369a1;
+        --accent-deep: #075985;
+        --accent-soft-bg: #e0f2fe;
+        --accent-soft-bg-hover: #bae6fd;
+        --danger: #e11d48;
+        --danger-strong: #b91c1c;
+        --danger-deep: #7f1d1d;
+        --success: #16a34a;
+        --promo: #ea580c;
+        --promo-muted: #94a3b8;
+        --focus-ring: rgba(2, 132, 199, 0.15);
+        --shadow-card: 0 20px 45px rgba(14, 116, 144, 0.15), 0 5px 15px rgba(0, 0, 0, 0.05);
+        --shadow-section: 0 4px 12px rgba(0, 0, 0, 0.02);
+        --shadow-section-hover: 0 8px 24px rgba(56, 189, 248, 0.12);
+        --shadow-btn: 0 8px 20px rgba(2, 132, 199, 0.35);
+        --shadow-btn-hover: 0 12px 25px rgba(2, 132, 199, 0.5);
+        --shadow-btn-danger: 0 8px 20px rgba(239, 68, 68, 0.35);
+        --shadow-btn-danger-hover: 0 12px 25px rgba(239, 68, 68, 0.5);
+        --shadow-result: 0 10px 30px rgba(14, 116, 144, 0.08);
+        color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            --bg-a: #0b1a2b;
+            --bg-b: #1c1408;
+            --bg-glow-1: rgba(56, 189, 248, 0.12);
+            --bg-glow-2: rgba(245, 158, 11, 0.08);
+            --surface: rgba(15, 23, 42, 0.88);
+            --surface-solid: #0f172a;
+            --surface-soft: #16223a;
+            --surface-soft-hover: #1b2942;
+            --card-border: rgba(148, 163, 184, 0.16);
+            --border: #263349;
+            --border-strong: #33445f;
+            --text: #cbd5e1;
+            --text-strong: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-faint: #64748b;
+            --accent: #38bdf8;
+            --accent-strong: #7dd3fc;
+            --accent-deep: #bae6fd;
+            --accent-soft-bg: #0c2436;
+            --accent-soft-bg-hover: #123249;
+            --danger: #fb7185;
+            --danger-strong: #f43f5e;
+            --danger-deep: #fecdd3;
+            --success: #4ade80;
+            --promo: #fb923c;
+            --promo-muted: #64748b;
+            --focus-ring: rgba(56, 189, 248, 0.25);
+            --shadow-card: 0 20px 45px rgba(0, 0, 0, 0.45), 0 5px 15px rgba(0, 0, 0, 0.3);
+            --shadow-section: 0 4px 12px rgba(0, 0, 0, 0.2);
+            --shadow-section-hover: 0 8px 24px rgba(56, 189, 248, 0.15);
+            --shadow-btn: 0 8px 20px rgba(56, 189, 248, 0.25);
+            --shadow-btn-hover: 0 12px 25px rgba(56, 189, 248, 0.35);
+            --shadow-btn-danger: 0 8px 20px rgba(251, 113, 133, 0.25);
+            --shadow-btn-danger-hover: 0 12px 25px rgba(251, 113, 133, 0.35);
+            --shadow-result: 0 10px 30px rgba(0, 0, 0, 0.35);
+            color-scheme: dark;
         }
-        .container {
-            width: 100%;
-            max-width: 620px;
-            margin: auto;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 32px;
-            border-radius: 28px;
-            border: 2px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 20px 45px rgba(14, 116, 144, 0.15), 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        .header-banner {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        .brand-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #0284c7;
-            color: white;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
-        }
-        h2 {
-            color: #0f172a;
-            margin: 0 0 6px 0;
-            font-size: 26px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        .subtitle {
-            font-size: 14px;
-            color: #64748b;
-            font-weight: 500;
-        }
-        .section {
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 20px;
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-        }
+    }
+
+    :root[data-theme="dark"] {
+        --bg-a: #0b1a2b;
+        --bg-b: #1c1408;
+        --bg-glow-1: rgba(56, 189, 248, 0.12);
+        --bg-glow-2: rgba(245, 158, 11, 0.08);
+        --surface: rgba(15, 23, 42, 0.88);
+        --surface-solid: #0f172a;
+        --surface-soft: #16223a;
+        --surface-soft-hover: #1b2942;
+        --card-border: rgba(148, 163, 184, 0.16);
+        --border: #263349;
+        --border-strong: #33445f;
+        --text: #cbd5e1;
+        --text-strong: #f1f5f9;
+        --text-muted: #94a3b8;
+        --text-faint: #64748b;
+        --accent: #38bdf8;
+        --accent-strong: #7dd3fc;
+        --accent-deep: #bae6fd;
+        --accent-soft-bg: #0c2436;
+        --accent-soft-bg-hover: #123249;
+        --danger: #fb7185;
+        --danger-strong: #f43f5e;
+        --danger-deep: #fecdd3;
+        --success: #4ade80;
+        --promo: #fb923c;
+        --promo-muted: #64748b;
+        --focus-ring: rgba(56, 189, 248, 0.25);
+        --shadow-card: 0 20px 45px rgba(0, 0, 0, 0.45), 0 5px 15px rgba(0, 0, 0, 0.3);
+        --shadow-section: 0 4px 12px rgba(0, 0, 0, 0.2);
+        --shadow-section-hover: 0 8px 24px rgba(56, 189, 248, 0.15);
+        --shadow-btn: 0 8px 20px rgba(56, 189, 248, 0.25);
+        --shadow-btn-hover: 0 12px 25px rgba(56, 189, 248, 0.35);
+        --shadow-btn-danger: 0 8px 20px rgba(251, 113, 133, 0.25);
+        --shadow-btn-danger-hover: 0 12px 25px rgba(251, 113, 133, 0.35);
+        --shadow-result: 0 10px 30px rgba(0, 0, 0, 0.35);
+        color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+        background:
+            radial-gradient(circle at 10% 15%, var(--bg-glow-1) 0%, transparent 42%),
+            radial-gradient(circle at 90% 85%, var(--bg-glow-2) 0%, transparent 42%),
+            linear-gradient(135deg, var(--bg-a) 0%, var(--bg-b) 100%);
+        min-height: 100vh;
+        margin: 0;
+        padding: 28px 15px;
+        color: var(--text);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 620px;
+        margin: auto;
+        background: var(--surface);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 32px;
+        border-radius: 28px;
+        border: 2px solid var(--card-border);
+        box-shadow: var(--shadow-card);
+    }
+
+    .header-banner {
+        text-align: center;
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .brand-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: var(--accent);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        margin: 0 auto;
+    }
+
+    h1 {
+        color: var(--text-strong);
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        text-wrap: balance;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .section {
+        margin-bottom: 18px;
+        padding: 20px;
+        background: var(--surface-soft);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+        box-shadow: var(--shadow-section);
+    }
+
+    @media (hover: hover) {
         .section:hover {
-            background: #ffffff;
-            border-color: #38bdf8;
-            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.12);
+            background: var(--surface-soft-hover);
+            border-color: var(--accent);
+            box-shadow: var(--shadow-section-hover);
             transform: translateY(-2px);
         }
-        label {
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #334155;
-        }
-        input[type="file"], input[type="text"] {
-            width: 100%;
-            padding: 14px 18px;
-            margin-bottom: 10px;
-            background: #ffffff;
-            border: 2px solid #cbd5e1;
-            border-radius: 14px;
-            box-sizing: border-box;
-            color: #0f172a;
-            font-size: 15px;
-            font-weight: 500;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        input[type="file"]::file-selector-button {
-            background: #e0f2fe;
-            color: #0284c7;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-right: 12px;
-            transition: 0.2s;
-        }
-        input[type="file"]::file-selector-button:hover {
-            background: #bae6fd;
-        }
-        input[type="text"]::placeholder {
-            color: #94a3b8;
-        }
-        input[type="text"]:focus, input[type="file"]:focus {
-            border-color: #0284c7;
-            background: #ffffff;
-            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
-        }
-        button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            margin-top: 5px;
-            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.35);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        button:hover {
-            background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(2, 132, 199, 0.5);
-        }
-        button.secondary {
-            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
-            margin-top: 10px;
-        }
-        button.secondary:hover {
-            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-            box-shadow: 0 12px 25px rgba(239, 68, 68, 0.5);
-        }
-        .result-box {
-            background: #ffffff;
-            padding: 24px;
-            border-radius: 20px;
-            margin-top: 22px;
-            border: 2px solid #bae6fd;
-            box-shadow: 0 10px 30px rgba(14, 116, 144, 0.08);
-            animation: fadeIn 0.4s ease;
-        }
-        .result-box h3 {
-            margin-top: 0;
-            color: #0369a1;
-            font-size: 18px;
-            border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .result-box p {
-            margin: 14px 0;
-            font-size: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px dashed #e2e8f0;
-            padding-bottom: 10px;
-            color: #334155;
-        }
-        .result-box p:last-child {
-            border-bottom: none;
-        }
-        .highlight {
-            color: #e11d48;
-            font-weight: 800;
-        }
-        .success-msg {
-            color: #16a34a;
-            font-weight: 700;
-            text-align: center;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+    }
+
+    label {
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        font-size: 13.5px;
+        color: var(--text);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    label .icon { color: var(--accent); flex-shrink: 0; }
+
+    input[type="file"], input[type="text"] {
+        width: 100%;
+        padding: 14px 18px;
+        margin-bottom: 10px;
+        background: var(--surface-solid);
+        border: 2px solid var(--border-strong);
+        border-radius: 14px;
+        box-sizing: border-box;
+        color: var(--text-strong);
+        font-size: 15px;
+        font-weight: 500;
+        outline: none;
+        transition: all 0.25s ease;
+        font-family: inherit;
+    }
+
+    input[type="text"] {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        letter-spacing: 0.3px;
+    }
+
+    input[type="file"]::file-selector-button {
+        background: var(--accent-soft-bg);
+        color: var(--accent);
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-right: 12px;
+        transition: 0.2s;
+        font-family: inherit;
+    }
+
+    input[type="file"]::file-selector-button:hover { background: var(--accent-soft-bg-hover); }
+
+    input[type="text"]::placeholder { color: var(--text-faint); font-family: 'Plus Jakarta Sans', Arial, sans-serif; }
+
+    input[type="text"]:focus, input[type="file"]:focus {
+        border-color: var(--accent);
+        background: var(--surface-solid);
+        box-shadow: 0 0 0 4px var(--focus-ring);
+    }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    button {
+        flex: 1 1 auto;
+        padding: 15px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        margin-top: 5px;
+        box-shadow: var(--shadow-btn);
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: inherit;
+    }
+
+    button:hover { background: linear-gradient(135deg, var(--accent-strong) 0%, var(--accent-deep) 100%); transform: translateY(-2px); box-shadow: var(--shadow-btn-hover); }
+    button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    button:active { transform: translateY(0); }
+
+    button.secondary {
+        background: linear-gradient(135deg, var(--danger) 0%, var(--danger-strong) 100%);
+        box-shadow: var(--shadow-btn-danger);
+    }
+    button.secondary:hover { background: linear-gradient(135deg, var(--danger-strong) 0%, var(--danger-deep) 100%); box-shadow: var(--shadow-btn-danger-hover); }
+
+    button.ghost {
+        background: var(--surface-solid);
+        color: var(--text);
+        border: 2px solid var(--border-strong);
+        box-shadow: none;
+    }
+    button.ghost:hover { background: var(--surface-soft); transform: none; box-shadow: none; border-color: var(--accent); }
+
+    .scanner-panel {
+        margin-top: 14px;
+        display: none;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 2px solid var(--accent);
+        background: #000;
+    }
+
+    #reader { width: 100%; }
+    #reader video { border-radius: 0; }
+
+    .scan-hint {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .status-msg {
+        font-weight: 600;
+        text-align: center;
+        margin-top: 10px;
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 18px;
+    }
+    .status-msg.ok { color: var(--success); }
+    .status-msg.err { color: var(--danger); }
+    .status-msg.busy { color: var(--accent); }
+
+    .result-box {
+        background: var(--surface-solid);
+        padding: 24px;
+        border-radius: 20px;
+        margin-top: 22px;
+        border: 2px solid var(--accent-soft-bg);
+        box-shadow: var(--shadow-result);
+        animation: fadeIn 0.4s ease;
+    }
+
+    .result-box h2 {
+        margin: 0 0 4px 0;
+        color: var(--accent-strong);
+        font-size: 17px;
+        font-weight: 800;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 12px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .result-row {
+        margin: 0;
+        padding: 12px 0;
+        font-size: 14.5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px dashed var(--border);
+        color: var(--text);
+    }
+    .result-row:last-child { border-bottom: none; }
+
+    .result-row .field-label { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; }
+    .result-row .field-label .icon { color: var(--text-faint); }
+
+    .field-value { text-align: right; font-weight: 700; color: var(--text-strong); }
+    .field-value.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--accent); }
+    .field-value.big { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .field-value.stock { color: var(--danger); }
+    .field-value.price { color: var(--success); }
+    .field-value.promo { color: var(--promo); }
+    .field-value.promo.none { color: var(--promo-muted); font-weight: 600; font-size: 14.5px; }
+
+    .icon { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .icon.fill { fill: currentColor; stroke: none; }
+    .icon-lg { width: 20px; height: 20px; }
+
+    .spin { animation: spin 0.9s linear infinite; }
+
+    .toast {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--danger-strong);
+        color: white;
+        padding: 12px 22px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 14px;
+        box-shadow: 0 10px 25px rgba(225, 29, 72, 0.35);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    @media (prefers-reduced-motion: reduce) {
+        .section, button, .result-box { transition: none; animation: none; }
+        .spin { animation-duration: 2.4s; }
+    }
+</style>
+<svg style="display:none" aria-hidden="true">
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+    <symbol id="i-barcode" viewBox="0 0 24 24" class="fill"><rect x="3" y="4" width="1.6" height="16"/><rect x="6.2" y="4" width="1" height="16"/><rect x="8.7" y="4" width="2.1" height="16"/><rect x="12.3" y="4" width="1" height="16"/><rect x="14.3" y="4" width="1.6" height="16"/><rect x="17.4" y="4" width="1" height="16"/><rect x="19.9" y="4" width="1.6" height="16"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 17.01"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1.5"/><line x1="9" y1="7.5" x2="9" y2="7.51"/><line x1="15" y1="7.5" x2="15" y2="7.51"/><line x1="9" y1="11.5" x2="9" y2="11.51"/><line x1="15" y1="11.5" x2="15" y2="11.51"/><line x1="9" y1="15.5" x2="9" y2="15.51"/><line x1="15" y1="15.5" x2="15" y2="15.51"/><line x1="10" y1="21" x2="10" y2="18"/><line x1="14" y1="21" x2="14" y2="18"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2.41 12.4a2 2 0 0 1 0-2.83l7.17-7.17A2 2 0 0 1 11 2h7a2 2 0 0 1 2 2v7a2 2 0 0 1-.41 1.41z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+    <symbol id="i-percent" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-loader" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9"/></symbol>
+</svg>
+
+
 </head>
 <body>
-
 <div class="container">
     <div class="header-banner">
-        <div class="brand-tag"><i class="fa-solid fa-shield-halved"></i> KOHNAN PARC MALL</div>
-        <h2>Tra Cứu Tồn Kho & Giá Bán</h2>
-        <div class="subtitle">Hệ thống kiểm tra thông tin hàng hóa nhanh chóng, chuẩn xác</div>
+        <div class="brand-tag"><svg class="icon icon-lg" style="stroke:white"><use href="#i-archive"/></svg> KOHNAN PARC MALL</div>
+        <h1>Tra Cứu Tồn Kho &amp; Giá Bán</h1>
+        <div class="subtitle">Quét mã vạch hoặc nhập tay để kiểm tra hàng hoá tức thì</div>
     </div>
 
     <div class="section">
-        <label><i class="fa-solid fa-file-arrow-up text-sky-600"></i> 1. Tải file dữ liệu hàng ngày (.xlsx / .xls / .csv / .txt):</label>
+        <label><svg class="icon"><use href="#i-upload"/></svg> 1. Tải file dữ liệu hàng ngày (.xlsx / .xls / .csv / .txt)</label>
         <input type="file" id="csvFile" accept=".csv, .txt, .xlsx, .xls">
-        <div id="status" class="success-msg"></div>
-        <button class="secondary" onclick="clearData()"><i class="fa-solid fa-trash"></i> Xóa Dữ Liệu Đã Lưu</button>
+        <div id="status" class="status-msg"></div>
+        <button class="secondary" onclick="clearData()"><svg class="icon"><use href="#i-trash"/></svg> Xoá Dữ Liệu Đã Lưu</button>
     </div>
 
     <div class="section">
-        <label><i class="fa-solid fa-barcode text-sky-600"></i> 2. Nhập mã sản phẩm:</label>
-        <input type="text" id="manualInput" placeholder="Nhập mã Barcode/SKU vào đây..." onkeypress="if(event.key === 'Enter') searchProduct();">
-        <button onclick="searchProduct()"><i class="fa-solid fa-magnifying-glass"></i> Tìm Kiếm Ngay</button>
+        <label><svg class="icon"><use href="#i-barcode"/></svg> 2. Nhập mã hoặc quét mã vạch</label>
+        <input type="text" id="manualInput" placeholder="Nhập mã Barcode / SKU..." onkeypress="if(event.key === 'Enter') searchProduct();">
+        <div class="btn-row">
+            <button onclick="searchProduct()"><svg class="icon"><use href="#i-search"/></svg> Tìm Kiếm</button>
+            <button id="scanToggleBtn" class="ghost" onclick="toggleScanner()"><svg class="icon"><use href="#i-camera"/></svg> <span id="scanBtnLabel">Quét Mã Vạch</span></button>
+        </div>
+        <div class="scanner-panel" id="readerWrap">
+            <div id="reader"></div>
+        </div>
+        <div id="scanHint" class="scan-hint" style="display:none;"><svg class="icon" style="width:14px;height:14px;"><use href="#i-camera"/></svg> Đưa mã vạch vào giữa khung hình, camera sẽ tự nhận diện</div>
     </div>
 
     <div class="result-box" id="resultArea" style="display:none;">
-        <h3><i class="fa-solid fa-circle-check text-emerald-500"></i> Kết Quả Tra Cứu:</h3>
-        <p><b><i class="fa-solid fa-barcode text-slate-400"></i> Mã sản phẩm:</b> <span id="resCode" style="font-family: monospace; color: #0284c7; font-weight: 700;"></span></p>
-        <p><b><i class="fa-solid fa-box text-slate-400"></i> Tên sản phẩm:</b> <span id="resName" class="highlight" style="text-align: right; max-width: 60%;"></span></p>
-        <p><b><i class="fa-solid fa-hashtag text-slate-400"></i> Mã NCC:</b> <span id="resSuppCode" style="font-weight: 600;"></span></p>
-        <p><b><i class="fa-solid fa-building text-slate-400"></i> Tên NCC:</b> <span id="resSuppName" style="font-weight: 600;"></span></p>
-        <p><b><i class="fa-solid fa-warehouse text-slate-400"></i> Số lượng tồn kho:</b> <span id="resStock" class="highlight" style="font-size:20px;"></span></p>
-        <p><b><i class="fa-solid fa-tag text-slate-400"></i> Giá bán:</b> <span id="resPrice" class="highlight" style="font-size:20px; color: #16a34a;"></span> VNĐ</p>
-        <p><b><i class="fa-solid fa-percent text-slate-400"></i> Giá khuyến mãi:</b> <span id="resPromo" style="font-size:20px; font-weight:800; color: #ea580c;"></span></p>
+        <h2><svg class="icon icon-lg" style="color:var(--success)"><use href="#i-check"/></svg> Kết Quả Tra Cứu</h2>
+        <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-barcode"/></svg>Mã sản phẩm</span><span id="resCode" class="field-value mono"></span></div>
+        <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-box"/></svg>Tên sản phẩm</span><span id="resName" class="field-value" style="max-width:60%;"></span></div>
+        <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-hash"/></svg>Mã NCC</span><span id="resSuppCode" class="field-value"></span></div>
+        <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-building"/></svg>Tên NCC</span><span id="resSuppName" class="field-value" style="max-width:60%;"></span></div>
+        <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-archive"/></svg>Tồn kho</span><span id="resStock" class="field-value big stock"></span></div>
+        <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-tag"/></svg>Giá bán</span><span id="resPrice" class="field-value big price"></span></div>
+        <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-percent"/></svg>Giá khuyến mãi</span><span id="resPromo" class="field-value big promo"></span></div>
     </div>
 </div>
 
 <script>
     let productData = {};
+    let html5QrCode = null;
+    let scanning = false;
+    let lastScanCode = null;
+    let lastScanTime = 0;
 
-    // Load data from localStorage on page startup if available
     window.addEventListener('DOMContentLoaded', () => {
         const savedData = localStorage.getItem('kohnan_product_data');
         const savedTimestamp = localStorage.getItem('kohnan_data_timestamp');
-
         if (savedData) {
             try {
                 productData = JSON.parse(savedData);
                 const count = Object.keys(productData).length;
-                document.getElementById('status').innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã khôi phục dữ liệu đã lưu trước đó (${count} mã sản phẩm - Cập nhật: ${savedTimestamp || 'N/A'})`;
-            } catch(e) {
-                console.error("Error parsing saved data", e);
+                setStatus(`Đã khôi phục dữ liệu đã lưu (${count} mã sản phẩm - cập nhật ${savedTimestamp || 'N/A'})`, 'ok', 'i-check');
+            } catch (e) {
+                console.error('Error parsing saved data', e);
             }
         }
     });
 
-    document.getElementById('csvFile').addEventListener('change', function(e) {
+    document.getElementById('csvFile').addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        document.getElementById('status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...';
+        setStatus('Đang tải dữ liệu...', 'busy', 'i-loader', true);
 
         const fileName = file.name.toLowerCase();
         const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
         if (isExcel) {
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = function (evt) {
                 try {
                     const data = new Uint8Array(evt.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    // header:1 -> mảng các mảng, giữ đúng thứ tự cột như file gốc (giống Papa.parse)
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: true });
                     processRows(rows);
-                } catch(err) {
-                    console.error("Error reading Excel file", err);
-                    document.getElementById('status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Lỗi đọc file Excel!';
+                } catch (err) {
+                    console.error('Error reading Excel file', err);
+                    setStatus('Lỗi đọc file Excel!', 'err', 'i-alert');
                 }
             };
-            reader.onerror = function() {
-                document.getElementById('status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Không thể đọc file!';
-            };
+            reader.onerror = function () { setStatus('Không thể đọc file!', 'err', 'i-alert'); };
             reader.readAsArrayBuffer(file);
         } else {
             Papa.parse(file, {
-                delimiter: "\t",
+                delimiter: '\t',
                 skipEmptyLines: true,
-                complete: function(results) {
-                    processRows(results.data);
-                }
+                complete: function (results) { processRows(results.data); }
             });
         }
     });
@@ -304,40 +548,32 @@
     function processRows(rows) {
         productData = {};
         rows.forEach(row => {
-            // Cần tối thiểu 13 cột để lấy tới cột M (Rate/Amount Value)
             if (!row || row.length < 13) return;
-
             let barcodeRaw = String(row[0]).trim();
-
-            // Bỏ qua dòng tiêu đề (header) hoặc dòng không phải mã vạch hợp lệ
             if (!barcodeRaw || !/^\d+$/.test(barcodeRaw)) return;
 
-            let itemInfo = {
-                name: row[3],       // Cột D: Item Name
-                suppCode: row[4],   // Cột E: Supplier Code
-                suppName: row[5],   // Cột F: Supplier Name
-                price: row[8],      // Cột I: Sales Unit Price(Tax incl.)
-                stock: row[11],     // Cột L: Close Qty
-                promo: row[12]      // Cột M: Rate/Amount Value
+            productData[barcodeRaw] = {
+                name: row[3],       // Item Name
+                suppCode: row[4],   // Supplier Code
+                suppName: row[5],   // Supplier Name
+                price: row[8],      // Sales Unit Price(Tax incl.)
+                stock: row[11],     // Close Qty
+                promo: row[12]      // Rate/Amount Value
             };
-
-            productData[barcodeRaw] = itemInfo;
         });
 
-        // Save to localStorage so it persists on F5 reload
         try {
             localStorage.setItem('kohnan_product_data', JSON.stringify(productData));
-            const nowStr = new Date().toLocaleString('vi-VN');
-            localStorage.setItem('kohnan_data_timestamp', nowStr);
-        } catch(err) {
-            console.warn("Storage quota exceeded or unavailable", err);
+            localStorage.setItem('kohnan_data_timestamp', new Date().toLocaleString('vi-VN'));
+        } catch (err) {
+            console.warn('Storage quota exceeded or unavailable', err);
         }
 
         const count = Object.keys(productData).length;
         if (count > 0) {
-            document.getElementById('status').innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã tải và lưu thành công dữ liệu sản phẩm! (${count} mã sản phẩm)`;
+            setStatus(`Đã tải và lưu thành công! (${count} mã sản phẩm)`, 'ok', 'i-check');
         } else {
-            document.getElementById('status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Không tìm thấy dữ liệu hợp lệ trong file!';
+            setStatus('Không tìm thấy dữ liệu hợp lệ trong file!', 'err', 'i-alert');
         }
     }
 
@@ -345,8 +581,15 @@
         localStorage.removeItem('kohnan_product_data');
         localStorage.removeItem('kohnan_data_timestamp');
         productData = {};
-        document.getElementById('status').innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã xóa dữ liệu đã lưu.';
+        setStatus('Đã xoá dữ liệu đã lưu.', 'ok', 'i-check');
         document.getElementById('resultArea').style.display = 'none';
+    }
+
+    function setStatus(msg, kind, iconId, spin) {
+        const el = document.getElementById('status');
+        el.className = 'status-msg' + (kind ? ' ' + kind : '');
+        const spinClass = spin ? ' spin' : '';
+        el.innerHTML = iconId ? `<svg class="icon${spinClass}" style="width:14px;height:14px;"><use href="#${iconId}"/></svg> ${msg}` : msg;
     }
 
     function formatMoney(val) {
@@ -357,10 +600,7 @@
 
     function searchProduct() {
         let code = document.getElementById('manualInput').value.trim();
-        if (!code) {
-            showCustomMessage("Vui lòng nhập mã vạch!");
-            return;
-        }
+        if (!code) { showToast('Vui lòng nhập mã vạch!'); return; }
 
         if (productData[code]) {
             let p = productData[code];
@@ -369,34 +609,95 @@
             document.getElementById('resSuppCode').innerText = p.suppCode;
             document.getElementById('resSuppName').innerText = p.suppName;
             document.getElementById('resStock').innerText = p.stock;
-            document.getElementById('resPrice').innerText = formatMoney(p.price);
+            document.getElementById('resPrice').innerText = formatMoney(p.price) + ' VNĐ';
 
             let promoEl = document.getElementById('resPromo');
             if (p.promo === undefined || p.promo === null || p.promo === '' || Number(p.promo) === 0) {
                 promoEl.innerText = 'Không áp dụng';
-                promoEl.style.color = '#94a3b8';
+                promoEl.classList.add('none');
             } else {
                 promoEl.innerText = formatMoney(p.promo) + ' VNĐ';
-                promoEl.style.color = '#ea580c';
+                promoEl.classList.remove('none');
             }
 
             document.getElementById('resultArea').style.display = 'block';
         } else {
-            showCustomMessage("Không tìm thấy mã sản phẩm này!");
+            showToast('Không tìm thấy mã sản phẩm này!');
             document.getElementById('resultArea').style.display = 'none';
         }
     }
 
-    function showCustomMessage(msg) {
-        let existing = document.getElementById('customAlert');
+    function toggleScanner() { scanning ? stopScanner() : startScanner(); }
+
+    function startScanner() {
+        if (typeof Html5Qrcode === 'undefined') {
+            showToast('Không tải được thư viện quét mã!');
+            return;
+        }
+        document.getElementById('readerWrap').style.display = 'block';
+        document.getElementById('scanHint').style.display = 'flex';
+        document.getElementById('scanBtnLabel').innerText = 'Đang mở camera...';
+
+        html5QrCode = new Html5Qrcode('reader');
+        const config = { fps: 10, qrbox: { width: 260, height: 140 } };
+
+        html5QrCode.start(
+            { facingMode: 'environment' },
+            config,
+            (decodedText) => onScanSuccess(decodedText),
+            () => { /* bỏ qua lỗi từng khung hình khi chưa thấy mã */ }
+        ).then(() => {
+            scanning = true;
+            document.getElementById('scanBtnLabel').innerText = 'Dừng Quét';
+        }).catch((err) => {
+            console.error(err);
+            showToast('Không mở được camera. Hãy cấp quyền camera cho trình duyệt.');
+            document.getElementById('readerWrap').style.display = 'none';
+            document.getElementById('scanHint').style.display = 'none';
+            document.getElementById('scanBtnLabel').innerText = 'Quét Mã Vạch';
+        });
+    }
+
+    function onScanSuccess(decodedText) {
+        const now = Date.now();
+        if (decodedText === lastScanCode && (now - lastScanTime) < 1500) return;
+        lastScanCode = decodedText;
+        lastScanTime = now;
+
+        document.getElementById('manualInput').value = decodedText;
+        searchProduct();
+
+        if (navigator.vibrate) { try { navigator.vibrate(80); } catch (e) {} }
+    }
+
+    function stopScanner() {
+        if (html5QrCode && scanning) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                finishStopUi();
+            }).catch(() => finishStopUi());
+        } else {
+            finishStopUi();
+        }
+    }
+
+    function finishStopUi() {
+        scanning = false;
+        document.getElementById('readerWrap').style.display = 'none';
+        document.getElementById('scanHint').style.display = 'none';
+        document.getElementById('scanBtnLabel').innerText = 'Quét Mã Vạch';
+    }
+
+    function showToast(msg) {
+        let existing = document.getElementById('customToast');
         if (existing) existing.remove();
 
-        let alertDiv = document.createElement('div');
-        alertDiv.id = 'customAlert';
-        alertDiv.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#e11d48; color:white; padding:12px 24px; border-radius:14px; font-weight:700; box-shadow:0 10px 25px rgba(225,29,72,0.3); z-index:1000; display:flex; align-items:center; gap:8px;";
-        alertDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${msg}`;
-        document.body.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 2500);
+        let el = document.createElement('div');
+        el.id = 'customToast';
+        el.className = 'toast';
+        el.innerHTML = `<svg class="icon" style="width:16px;height:16px;stroke:white;"><use href="#i-alert"/></svg> ${msg}`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2500);
     }
 </script>
 
