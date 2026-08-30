@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -351,6 +350,20 @@
     .status-msg.err { color: var(--danger); }
     .status-msg.busy { color: var(--accent); }
 
+    .storage-warning {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        background: rgba(225, 29, 72, 0.08);
+        border: 1.5px solid var(--danger);
+        border-radius: 14px;
+        color: var(--danger);
+        font-size: 13.5px;
+        font-weight: 600;
+        line-height: 1.5;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
     .result-box {
         background: var(--surface-solid);
         padding: 24px;
@@ -458,6 +471,11 @@
         <div class="subtitle">Quét mã vạch hoặc nhập tay để kiểm tra hàng hoá tức thì</div>
     </div>
 
+    <div class="storage-warning" id="storageWarning" style="display:none;">
+        <svg class="icon" style="flex-shrink:0;margin-top:1px;"><use href="#i-alert"/></svg>
+        <span id="storageWarningText"></span>
+    </div>
+
     <div class="section">
         <label><svg class="icon"><use href="#i-upload"/></svg> 1. Tải file dữ liệu hàng ngày (.xlsx / .xls / .csv / .txt)</label>
         <input type="file" id="csvFile" accept=".csv, .txt, .xlsx, .xls">
@@ -497,7 +515,34 @@
     let lastScanCode = null;
     let lastScanTime = 0;
 
+    function isStorageAvailable() {
+        try {
+            const k = '__kohnan_probe__';
+            localStorage.setItem(k, '1');
+            const ok = localStorage.getItem(k) === '1';
+            localStorage.removeItem(k);
+            return ok;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function showStorageWarning(msg) {
+        const el = document.getElementById('storageWarning');
+        document.getElementById('storageWarningText').innerText = msg;
+        el.style.display = 'flex';
+    }
+
+    function hideStorageWarning() {
+        document.getElementById('storageWarning').style.display = 'none';
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+        if (!isStorageAvailable()) {
+            showStorageWarning('Trình duyệt đang CHẶN lưu trữ dữ liệu trên thiết bị này — thường do đang mở ở chế độ Ẩn danh/Riêng tư (Private/Incognito), hoặc trình duyệt có bật "Xoá dữ liệu duyệt web khi đóng tab". Vì vậy dữ liệu tải lên sẽ mất mỗi khi tải lại trang. Hãy mở trang bằng tab thường (không ẩn danh) và tắt tính năng tự xoá dữ liệu duyệt web trong phần Cài đặt quyền riêng tư của trình duyệt.');
+            return;
+        }
+
         const savedData = localStorage.getItem('kohnan_product_data');
         const savedTimestamp = localStorage.getItem('kohnan_data_timestamp');
         if (savedData) {
@@ -562,11 +607,19 @@
             };
         });
 
+        let savedOk = false;
         try {
             localStorage.setItem('kohnan_product_data', JSON.stringify(productData));
             localStorage.setItem('kohnan_data_timestamp', new Date().toLocaleString('vi-VN'));
+            savedOk = localStorage.getItem('kohnan_product_data') !== null;
         } catch (err) {
             console.warn('Storage quota exceeded or unavailable', err);
+            showStorageWarning('Đã đọc được file nhưng KHÔNG lưu được vào bộ nhớ trình duyệt (' + (err && err.name ? err.name : 'lỗi không xác định') + '). Dữ liệu sẽ mất khi tải lại trang — kiểm tra chế độ Ẩn danh/Riêng tư hoặc dung lượng lưu trữ của trình duyệt.');
+        }
+
+        if (savedOk) hideStorageWarning();
+        else if (Object.keys(productData).length > 0) {
+            showStorageWarning('Đã đọc được file nhưng trình duyệt không lưu lại được dữ liệu. Dữ liệu sẽ mất khi tải lại trang — kiểm tra chế độ Ẩn danh/Riêng tư hoặc cài đặt tự xoá dữ liệu duyệt web.');
         }
 
         const count = Object.keys(productData).length;
