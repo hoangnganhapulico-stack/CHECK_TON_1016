@@ -451,6 +451,66 @@
         .section, button, .result-box { transition: none; animation: none; }
         .spin { animation-duration: 2.4s; }
     }
+
+    .guide-toggle {
+        background: var(--surface-solid);
+        color: var(--text-strong);
+        border: 2px solid var(--border-strong);
+        box-shadow: none;
+        justify-content: space-between;
+        font-size: 14.5px;
+    }
+    .guide-toggle:hover { background: var(--surface-soft); transform: none; box-shadow: none; border-color: var(--accent); }
+    .guide-toggle .chev { transition: transform 0.25s ease; }
+    .guide-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+    .guide-content {
+        margin-top: 14px;
+        padding-top: 16px;
+        border-top: 1px dashed var(--border);
+        font-size: 13.5px;
+        line-height: 1.65;
+        color: var(--text);
+    }
+
+    .guide-content h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14.5px;
+        font-weight: 800;
+        color: var(--text-strong);
+        margin: 20px 0 8px;
+    }
+    .guide-content h3:first-child { margin-top: 0; }
+    .guide-content h3 .step-no {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        font-size: 12px;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+    .guide-content ol, .guide-content ul {
+        margin: 0 0 4px;
+        padding-left: 22px;
+    }
+    .guide-content li { margin-bottom: 6px; }
+    .guide-content li::marker { color: var(--accent); font-weight: 700; }
+    .guide-content b { color: var(--text-strong); }
+    .guide-content .guide-note {
+        margin-top: 6px;
+        padding: 10px 12px;
+        background: var(--accent-soft-bg);
+        border-radius: 10px;
+        font-size: 12.5px;
+        color: var(--text-muted);
+    }
 </style>
 <svg style="display:none" aria-hidden="true">
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
@@ -468,6 +528,8 @@
     <symbol id="i-percent" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
     <symbol id="i-loader" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
 </svg>
 
 
@@ -524,6 +586,49 @@
         <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-archive"/></svg>Tồn kho</span><span id="resStock" class="field-value big stock"></span></div>
         <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-tag"/></svg>Giá bán</span><span id="resPrice" class="field-value big price"></span></div>
         <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-percent"/></svg>Giá khuyến mãi</span><span id="resPromo" class="field-value big promo"></span></div>
+    </div>
+
+    <div class="section">
+        <button class="guide-toggle" id="guideToggleBtn" aria-expanded="false" onclick="toggleGuide()">
+            <span style="display:flex;align-items:center;gap:8px;"><svg class="icon"><use href="#i-help"/></svg> Hướng Dẫn Sử Dụng</span>
+            <svg class="icon chev"><use href="#i-chevron-down"/></svg>
+        </button>
+
+        <div class="guide-content" id="guideContent" style="display:none;">
+            <h3><span class="step-no">1</span> Mở trang lần đầu trên điện thoại</h3>
+            <ol>
+                <li>Mở đường link này trên trình duyệt điện thoại (Chrome, Safari...).</li>
+                <li>Bấm menu trình duyệt (dấu 3 chấm ở Chrome, hoặc nút chia sẻ ở Safari) → chọn <b>"Thêm vào Màn hình chính"</b> để có icon riêng, mở nhanh như một ứng dụng.</li>
+            </ol>
+            <div class="guide-note">Luôn mở bằng đường link web này, không copy file HTML vào máy để mở trực tiếp — mở file cục bộ sẽ không lưu được dữ liệu và không quét camera được.</div>
+
+            <h3><span class="step-no">2</span> Tải dữ liệu hàng ngày</h3>
+            <ol>
+                <li>Mục <b>1</b>: bấm "Chọn tệp", chọn file danh mục hàng hoá xuất từ hệ thống (items.csv hoặc .xlsx) — chứa tên, mã NCC, giá bán, tồn kho.</li>
+                <li>Mục <b>2</b> (không bắt buộc): bấm "Chọn tệp", chọn file khuyến mãi (sale_list.csv hoặc .xlsx), kiểm tra đúng mã cửa hàng ở ô bên dưới (mặc định 1016). Phần mềm tự lọc khuyến mãi đang chạy đúng hôm nay cho cửa hàng đó.</li>
+            </ol>
+            <div class="guide-note">Luôn tải mục 1 trước rồi mới tải mục 2. Nên tải lại cả 2 file mỗi ngày để số liệu tồn kho, giá và khuyến mãi luôn mới nhất.</div>
+
+            <h3><span class="step-no">3</span> Tra cứu sản phẩm</h3>
+            <ul>
+                <li>Gõ tay mã vạch/SKU vào ô rồi bấm <b>"Tìm Kiếm"</b> (hoặc nhấn Enter).</li>
+                <li>Hoặc bấm <b>"Quét Mã Vạch"</b> để dùng camera quét trực tiếp — lần đầu trình duyệt sẽ hỏi xin quyền Camera, chọn "Cho phép". Quét được liên tiếp nhiều mã mà không cần bấm lại nút.</li>
+            </ul>
+
+            <h3><span class="step-no">4</span> Dữ liệu được lưu ở đâu</h3>
+            <ul>
+                <li>Sau khi tải file, dữ liệu tự lưu ngay trên thiết bị/trình duyệt đang dùng — tắt mở lại hay bấm F5 vẫn còn.</li>
+                <li>Dữ liệu <b>không tự đồng bộ</b> sang máy hay điện thoại khác. Mỗi người dùng thiết bị riêng cần tự tải file 1 lần trên thiết bị của mình.</li>
+                <li>Muốn xoá hết để tải file mới từ đầu: bấm <b>"Xoá Toàn Bộ Dữ Liệu Đã Lưu"</b>.</li>
+            </ul>
+
+            <h3><span class="step-no">5</span> Xử lý sự cố thường gặp</h3>
+            <ul>
+                <li><b>Không mở được camera:</b> kiểm tra đã cấp quyền Camera cho trang web chưa (bấm vào icon ổ khoá cạnh thanh địa chỉ → Quyền → Camera → Cho phép); tắt các icon nổi/quả bóng chat đang chạy trên máy vì có thể chặn hộp thoại xin quyền.</li>
+                <li><b>Báo "trình duyệt chặn lưu trữ dữ liệu":</b> tắt chế độ Ẩn danh/Riêng tư, mở bằng tab thường.</li>
+                <li><b>Tải file xong báo 0 sản phẩm:</b> kiểm tra đúng file danh mục hàng hoá (không phải file khuyến mãi), đúng định dạng xuất từ hệ thống.</li>
+            </ul>
+        </div>
     </div>
 </div>
 
@@ -833,6 +938,14 @@
             showToast('Không tìm thấy mã sản phẩm này!');
             document.getElementById('resultArea').style.display = 'none';
         }
+    }
+
+    function toggleGuide() {
+        const content = document.getElementById('guideContent');
+        const btn = document.getElementById('guideToggleBtn');
+        const isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : 'block';
+        btn.setAttribute('aria-expanded', String(!isOpen));
     }
 
     function toggleScanner() { scanning ? stopScanner() : startScanner(); }
