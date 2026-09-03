@@ -359,6 +359,79 @@
         line-height: 1.5;
     }
 
+    .bulk-group {
+        margin-top: 4px;
+        padding-top: 12px;
+    }
+    .bulk-group .bulk-group-label {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .bulk-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        background: var(--accent-soft-bg);
+        border: 1.5px solid var(--accent-soft-bg-hover);
+        border-radius: 12px;
+        color: var(--text-strong);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .bulk-chip:hover { background: var(--accent-soft-bg-hover); border-color: var(--accent); }
+    .bulk-chip .bulk-chip-code {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        color: var(--accent);
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+    .bulk-group-note {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+    .bulk-deal {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        background: rgba(234, 88, 12, 0.1);
+        border: 1.5px solid rgba(234, 88, 12, 0.28);
+        border-radius: 12px;
+    }
+    .bulk-deal .bulk-deal-label {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--text-strong);
+    }
+    .bulk-deal .bulk-deal-price {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--promo);
+        white-space: nowrap;
+    }
+    .bulk-deal-note {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        font-style: italic;
+        margin: -6px 0 12px 2px;
+    }
+
     .storage-warning {
         margin-bottom: 18px;
         padding: 14px 16px;
@@ -530,6 +603,7 @@
     <symbol id="i-loader" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9"/></symbol>
     <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
     <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
 </svg>
 
 
@@ -561,11 +635,18 @@
         <label style="margin-top:10px;">Mã cửa hàng cần lọc</label>
         <input type="text" id="storeCodeInput" value="1016" placeholder="Ví dụ: 1016">
         <div class="field-hint">Chỉ áp dụng khuyến mãi đang chạy đúng ngày hôm nay và đúng cửa hàng này. Bỏ trống ô mã cửa hàng để lấy khuyến mãi ở mọi cửa hàng.</div>
+    </div>
+
+    <div class="section">
+        <label><svg class="icon"><use href="#i-layers"/></svg> 3. (Tuỳ chọn) Tải file Mix and Match / Bundle Sale (bulk_sale_result... — .csv / .xlsx)</label>
+        <input type="file" id="bulkFile" accept=".csv, .txt, .xlsx, .xls">
+        <div id="statusBulk" class="status-msg"></div>
+        <div class="field-hint">Các mã có cùng "Bulk Sale Code" trong file là cùng một chương trình — Mix and Match cho phép đổi qua lại giữa các mã đó, Bundle Sale thường chỉ áp dụng cho đúng mã đó khi mua đủ số lượng.</div>
         <button class="secondary" onclick="clearData()" style="margin-top:12px;"><svg class="icon"><use href="#i-trash"/></svg> Xoá Toàn Bộ Dữ Liệu Đã Lưu</button>
     </div>
 
     <div class="section">
-        <label><svg class="icon"><use href="#i-barcode"/></svg> 3. Nhập mã hoặc quét mã vạch</label>
+        <label><svg class="icon"><use href="#i-barcode"/></svg> 4. Nhập mã hoặc quét mã vạch</label>
         <input type="text" id="manualInput" placeholder="Nhập mã Barcode / SKU..." onkeypress="if(event.key === 'Enter') searchProduct();">
         <div class="btn-row">
             <button onclick="searchProduct()"><svg class="icon"><use href="#i-search"/></svg> Tìm Kiếm</button>
@@ -586,6 +667,8 @@
         <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-archive"/></svg>Tồn kho</span><span id="resStock" class="field-value big stock"></span></div>
         <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-tag"/></svg>Giá bán</span><span id="resPrice" class="field-value big price"></span></div>
         <div class="result-row"><span class="field-label"><svg class="icon"><use href="#i-percent"/></svg>Giá khuyến mãi</span><span id="resPromo" class="field-value big promo"></span></div>
+        <div class="result-row" id="resBulkRow" style="display:none;"><span class="field-label"><svg class="icon"><use href="#i-layers"/></svg>Chương trình</span><span id="resBulkType" class="field-value"></span></div>
+        <div id="resBulkGroup" class="bulk-group" style="display:none;"></div>
     </div>
 
     <div class="section">
@@ -606,8 +689,9 @@
             <ol>
                 <li>Mục <b>1</b>: bấm "Chọn tệp", chọn file danh mục hàng hoá xuất từ hệ thống (items.csv hoặc .xlsx) — chứa tên, mã NCC, giá bán, tồn kho.</li>
                 <li>Mục <b>2</b> (không bắt buộc): bấm "Chọn tệp", chọn file khuyến mãi (sale_list.csv hoặc .xlsx), kiểm tra đúng mã cửa hàng ở ô bên dưới (mặc định 1016). Phần mềm tự lọc khuyến mãi đang chạy đúng hôm nay cho cửa hàng đó.</li>
+                <li>Mục <b>3</b> (không bắt buộc): bấm "Chọn tệp", chọn file Mix and Match / Bundle Sale (bulk_sale_result...csv hoặc .xlsx). Phần mềm tự nhóm các mã theo "Bulk Sale Code" và hiện rõ mã nào Mix and Match được với mã nào khi tra cứu.</li>
             </ol>
-            <div class="guide-note">Luôn tải mục 1 trước rồi mới tải mục 2. Nên tải lại cả 2 file mỗi ngày để số liệu tồn kho, giá và khuyến mãi luôn mới nhất.</div>
+            <div class="guide-note">Luôn tải mục 1 trước, rồi đến mục 2 và mục 3. Nên tải lại cả 3 file mỗi ngày để số liệu tồn kho, giá, khuyến mãi và Mix and Match/Bundle Sale luôn mới nhất.</div>
 
             <h3><span class="step-no">3</span> Tra cứu sản phẩm</h3>
             <ul>
@@ -782,6 +866,99 @@
         }
     });
 
+    document.getElementById('bulkFile').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (Object.keys(productData).length === 0) {
+            setBulkStatus('Hãy tải file danh mục hàng hoá ở bước 1 trước, rồi mới tải file Mix and Match / Bundle Sale.', 'err', 'i-alert');
+            e.target.value = '';
+            return;
+        }
+
+        setBulkStatus('Đang đọc file Mix and Match / Bundle Sale...', 'busy', 'i-loader', true);
+
+        const fileName = file.name.toLowerCase();
+        const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
+        if (isExcel) {
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    processBulkSale(rows);
+                } catch (err) {
+                    console.error('Error reading bulk sale Excel file', err);
+                    setBulkStatus('Lỗi đọc file!', 'err', 'i-alert');
+                }
+            };
+            reader.onerror = function () { setBulkStatus('Không thể đọc file!', 'err', 'i-alert'); };
+            reader.readAsArrayBuffer(file);
+        } else {
+            Papa.parse(file, {
+                header: true,
+                delimiter: ',',
+                skipEmptyLines: true,
+                complete: function (results) { processBulkSale(results.data); }
+            });
+        }
+    });
+
+    async function processBulkSale(rows) {
+        // Nhóm các dòng theo "Bulk Sale Code" — các mã cùng nhóm là cùng một chương
+        // trình Mix and Match / Bundle Sale, có thể đổi qua lại với nhau.
+        const groups = {};
+        rows.forEach(r => {
+            if (!r) return;
+            const code = String(r['Bulk Sale Code'] || '').trim();
+            const barcode = String(r['Barcode'] || '').trim();
+            if (!code || !/^\d+$/.test(barcode)) return;
+            if (!groups[code]) groups[code] = [];
+            groups[code].push({
+                barcode,
+                name: r['Item Name'] || '',
+                type: r['Bulk Sale Type'] || '',
+                bulkName: r['Bulk Sale Name'] || ''
+            });
+        });
+
+        let applied = 0;
+        let totalBarcodes = 0;
+
+        Object.values(groups).forEach(members => {
+            members.forEach(m => {
+                totalBarcodes++;
+                if (!productData[m.barcode]) return;
+                productData[m.barcode].bulk = {
+                    type: m.type,
+                    bulkName: m.bulkName,
+                    siblings: members
+                        .filter(x => x.barcode !== m.barcode)
+                        .map(x => ({ barcode: x.barcode, name: x.name }))
+                };
+                applied++;
+            });
+        });
+
+        if (totalBarcodes === 0) {
+            setBulkStatus('Không tìm thấy mã vạch hợp lệ nào trong file này.', 'err', 'i-alert');
+            return;
+        }
+
+        try {
+            await store.setItem('kohnan_product_data', productData);
+            hideStorageWarning();
+            setBulkStatus(`Đã ghép ${applied.toLocaleString('vi-VN')} mã vào ${Object.keys(groups).length.toLocaleString('vi-VN')} chương trình Mix and Match / Bundle Sale.`, 'ok', 'i-check');
+        } catch (err) {
+            console.warn('Storage write failed', err);
+            showStorageWarning('Đã ghép Mix and Match / Bundle Sale nhưng KHÔNG lưu được vào bộ nhớ trình duyệt. Dữ liệu sẽ mất khi tải lại trang.');
+            setBulkStatus(`Đã ghép ${applied.toLocaleString('vi-VN')} mã (dùng tạm trong phiên này, chưa lưu được).`, 'err', 'i-alert');
+        }
+    }
+
     function todayAsYYYYMMDD() {
         const d = new Date();
         const y = d.getFullYear();
@@ -899,11 +1076,51 @@
 
     function setStatus(msg, kind, iconId, spin) { setStatusEl('status', msg, kind, iconId, spin); }
     function setPromoStatus(msg, kind, iconId, spin) { setStatusEl('statusPromo', msg, kind, iconId, spin); }
+    function setBulkStatus(msg, kind, iconId, spin) { setStatusEl('statusBulk', msg, kind, iconId, spin); }
 
     function formatMoney(val) {
         let n = Number(val);
         if (isNaN(n)) return val;
         return n.toLocaleString('vi-VN');
+    }
+
+    // Đọc số lượng & giá của chương trình từ tên chương trình (Bulk Sale Name),
+    // ví dụ "All_BD_25_02BANGENERGY@12K" -> giá 12.000đ, "SB COTTON PAD 99K3PCS" -> giá 99.000đ, số lượng 3.
+    // Đọc số lượng đúng theo quy ước đặt tên chương trình của Kohnan — KHÔNG suy đoán theo số mã
+    // trong nhóm Mix and Match (số mã trong nhóm chỉ là số hương vị/lựa chọn để đổi qua lại, không
+    // phải số lượng phải mua). Có 2 cách tên chương trình ghi số lượng, ưu tiên theo thứ tự:
+    //   1) Hậu tố rõ ràng "...NPCS" ngay trong tên, vd "SB COTTON PAD 99K3PCS" -> 3,
+    //      "DERMAYU MASK 49K5PCS" -> 5, "Kolmar 49K/2PCS" -> 2.
+    //   2) Mã số 1-2 chữ số gắn liền ngay trước tên sản phẩm (sau dấu "_", không có khoảng trắng),
+    //      vd "All_BD_25_02BANGENERGY@12K" -> 2, "All_MM_15_03DEO@99K" -> 3,
+    //      "All_MM_25_03TARAMITUI@78K" -> 3, "All_BD_2SBJumboToiletPaper@69k" -> 2 (chỉ 1 chữ số,
+    //      KHÔNG bắt buộc phải đủ 2 chữ số — lỗi trước đây là bắt buộc đúng 2 chữ số nên bỏ sót
+    //      các mã chỉ có 1 chữ số như "_2SB..."). Số đứng trước đó (vd "25"/"15") là mã bộ phận/danh
+    //      mục, không phải số lượng — phân biệt được vì nó luôn có dấu "_" theo sau, còn mã số lượng
+    //      thì dính liền chữ cái đầu tên sản phẩm, không có dấu cách/gạch dưới ở giữa. Lấy theo cụm
+    //      khớp CUỐI CÙNG trong tên (gần tên sản phẩm/giá nhất) để tránh nhầm với mã danh mục phía trước.
+    // Nếu không có cả 2 tín hiệu trên thì KHÔNG đoán số lượng (trả về null), tránh hiện sai.
+    function parseBulkDeal(bulkName) {
+        if (!bulkName) return null;
+        const name = String(bulkName);
+        const priceMatch = name.match(/(\d+(?:[.,]\d+)?)\s*K(?!G)/i);
+        if (!priceMatch) return null;
+        const price = parseFloat(priceMatch[1].replace(',', '.')) * 1000;
+        if (!price || price <= 0) return null;
+
+        const pcsMatch = name.match(/(\d+)\s*PCS/i);
+        if (pcsMatch) {
+            const qty = parseInt(pcsMatch[1], 10);
+            if (qty >= 2) return { qty, price, qtySource: 'explicit' };
+        }
+
+        const prefixMatches = [...name.matchAll(/_(\d{1,2})(?=[A-Za-zÀ-ỹ])/g)];
+        if (prefixMatches.length > 0) {
+            const qty = parseInt(prefixMatches[prefixMatches.length - 1][1], 10);
+            if (qty >= 2) return { qty, price, qtySource: 'prefix' };
+        }
+
+        return null;
     }
 
     function searchProduct() {
@@ -933,11 +1150,60 @@
                 promoEl.classList.remove('none');
             }
 
+            const bulkRow = document.getElementById('resBulkRow');
+            const bulkType = document.getElementById('resBulkType');
+            const bulkGroup = document.getElementById('resBulkGroup');
+            if (p.bulk) {
+                bulkRow.style.display = 'flex';
+                bulkType.innerText = p.bulk.bulkName ? `${p.bulk.type} — ${p.bulk.bulkName}` : p.bulk.type;
+                bulkGroup.style.display = 'block';
+
+                const deal = parseBulkDeal(p.bulk.bulkName);
+                let dealHtml = '';
+                if (deal) {
+                    const note = deal.qtySource === 'prefix'
+                        ? '<div class="bulk-deal-note">* Số lượng lấy theo mã trong tên chương trình khuyến mãi.</div>'
+                        : '';
+                    // Luôn hiển thị theo đúng bản chất dữ liệu: mua đủ số lượng N thì được tính giá combo
+                    // cố định Z — "Mua Combo N PCS — Giá Zđ". KHÔNG diễn giải thành "tính tiền N-1" (kiểu
+                    // mua 1 tặng 1) vì đó là suy diễn không có căn cứ trong dữ liệu, kể cả khi N = 2
+                    // (vd Bundle Sale "2SBJumboToiletPaper@69k" là combo 2 giá 69.000đ, không phải kiểu
+                    // "mua 2 tính 1" — số tiền combo không nhất thiết bằng đúng giá 1 sản phẩm lẻ).
+                    const dealLabel = 'Mua Combo ' + deal.qty + ' PCS';
+                    dealHtml = '<div class="bulk-deal"><span class="bulk-deal-label">' + dealLabel + '</span><span class="bulk-deal-price">Giá ' + formatMoney(deal.price) + 'đ</span></div>' + note;
+                }
+
+                if (p.bulk.siblings && p.bulk.siblings.length > 0) {
+                    bulkGroup.innerHTML = dealHtml +
+                        '<div class="bulk-group-label"><svg class="icon" style="width:14px;height:14px;"><use href="#i-layers"/></svg>Mix and Match cùng các mã (' + p.bulk.siblings.length + ')</div>' +
+                        p.bulk.siblings.map(s =>
+                            `<button type="button" class="bulk-chip" onclick="document.getElementById('manualInput').value='${s.barcode}';searchProduct();"><span>${escapeHtml(s.name)}</span><span class="bulk-chip-code">${s.barcode}</span></button>`
+                        ).join('');
+                } else if (dealHtml) {
+                    bulkGroup.innerHTML = dealHtml + '<div class="bulk-group-note">Áp dụng khi mua đủ số lượng của chính mã này, không đổi sang mã khác.</div>';
+                } else {
+                    bulkGroup.innerHTML = '<div class="bulk-group-note">Áp dụng khi mua đủ số lượng của chính mã này, không đổi sang mã khác.</div>';
+                }
+            } else {
+                bulkRow.style.display = 'none';
+                bulkGroup.style.display = 'none';
+                bulkGroup.innerHTML = '';
+            }
+
             document.getElementById('resultArea').style.display = 'block';
         } else {
             showToast('Không tìm thấy mã sản phẩm này!');
             document.getElementById('resultArea').style.display = 'none';
         }
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function toggleGuide() {
