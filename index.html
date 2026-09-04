@@ -638,10 +638,10 @@
     </div>
 
     <div class="section">
-        <label><svg class="icon"><use href="#i-layers"/></svg> 3. (Tuỳ chọn) Tải file Mix and Match / Bundle Sale (bulk_sale_result... — .csv / .xlsx)</label>
+        <label><svg class="icon"><use href="#i-layers"/></svg> 3. (Tuỳ chọn) Tải file Mix and Match / Bundle Sale (bulk_sale_list... — .csv / .xlsx)</label>
         <input type="file" id="bulkFile" accept=".csv, .txt, .xlsx, .xls">
         <div id="statusBulk" class="status-msg"></div>
-        <div class="field-hint">Các mã có cùng "Bulk Sale Code" trong file là cùng một chương trình — Mix and Match cho phép đổi qua lại giữa các mã đó, Bundle Sale thường chỉ áp dụng cho đúng mã đó khi mua đủ số lượng.</div>
+        <div class="field-hint">Các mã có cùng mã chương trình trong file là cùng một chương trình — Mix and Match cho phép đổi qua lại giữa các mã đó, Bundle Sale chỉ áp dụng cho đúng mã đó khi mua đủ số lượng. Phần mềm tự lọc theo ngày, chỉ lấy chương trình đang chạy đúng hôm nay (dựa theo Sale Start Date/Sale End Date trong file).</div>
         <button class="secondary" onclick="clearData()" style="margin-top:12px;"><svg class="icon"><use href="#i-trash"/></svg> Xoá Toàn Bộ Dữ Liệu Đã Lưu</button>
     </div>
 
@@ -689,7 +689,7 @@
             <ol>
                 <li>Mục <b>1</b>: bấm "Chọn tệp", chọn file danh mục hàng hoá xuất từ hệ thống (items.csv hoặc .xlsx) — chứa tên, mã NCC, giá bán, tồn kho.</li>
                 <li>Mục <b>2</b> (không bắt buộc): bấm "Chọn tệp", chọn file khuyến mãi (sale_list.csv hoặc .xlsx), kiểm tra đúng mã cửa hàng ở ô bên dưới (mặc định 1016). Phần mềm tự lọc khuyến mãi đang chạy đúng hôm nay cho cửa hàng đó.</li>
-                <li>Mục <b>3</b> (không bắt buộc): bấm "Chọn tệp", chọn file Mix and Match / Bundle Sale (bulk_sale_result...csv hoặc .xlsx). Phần mềm tự nhóm các mã theo "Bulk Sale Code" và hiện rõ mã nào Mix and Match được với mã nào khi tra cứu.</li>
+                <li>Mục <b>3</b> (không bắt buộc): bấm "Chọn tệp", chọn file Mix and Match / Bundle Sale (bulk_sale_list...csv hoặc .xlsx). Phần mềm tự nhóm các mã theo mã chương trình, tự lọc đúng chương trình đang chạy hôm nay, và hiện rõ mã nào Mix and Match được với mã nào khi tra cứu.</li>
             </ol>
             <div class="guide-note">Luôn tải mục 1 trước, rồi đến mục 2 và mục 3. Nên tải lại cả 3 file mỗi ngày để số liệu tồn kho, giá, khuyến mãi và Mix and Match/Bundle Sale luôn mới nhất.</div>
 
@@ -908,14 +908,34 @@
     });
 
     async function processBulkSale(rows) {
-        // Nhóm các dòng theo "Bulk Sale Code" — các mã cùng nhóm là cùng một chương
-        // trình Mix and Match / Bundle Sale, có thể đổi qua lại với nhau.
+        // Nhóm các dòng theo mã chương trình — các mã cùng nhóm là cùng một chương trình
+        // Mix and Match / Bundle Sale, có thể đổi qua lại với nhau.
+        // Hỗ trợ cả 2 định dạng file:
+        //  - File mới "bulk_sale_list.csv": cột "Bulk Sale" (không phải "Bulk Sale Code"), có thêm
+        //    "Sale Start Date"/"Sale End Date" để lọc đúng chương trình đang chạy hôm nay, và KHÔNG có
+        //    cột "Bulk Sale Type" riêng — tự suy ra Mix and Match/Bundle Sale theo số mã trong nhóm
+        //    (từ 2 mã trở lên = Mix and Match, chỉ 1 mã = Bundle Sale), vì chữ "MM"/"BD" trong tên đôi
+        //    khi ghi không nhất quán giữa Project Name và Bulk Sale Name của cùng 1 chương trình.
+        //  - File cũ "bulk_sale_result...csv": có sẵn cột "Bulk Sale Code" và "Bulk Sale Type", dùng
+        //    trực tiếp như trước, không lọc theo ngày (file đó không có cột ngày).
+        const today = todayAsYYYYMMDD();
         const groups = {};
+        let scanned = 0, expired = 0;
+
         rows.forEach(r => {
             if (!r) return;
-            const code = String(r['Bulk Sale Code'] || '').trim();
+            const code = String((r['Bulk Sale'] ?? r['Bulk Sale Code']) || '').trim();
             const barcode = String(r['Barcode'] || '').trim();
             if (!code || !/^\d+$/.test(barcode)) return;
+            scanned++;
+
+            const startD = parseInt(r['Sale Start Date'], 10);
+            const endD = parseInt(r['Sale End Date'], 10);
+            if (startD && endD && (today < startD || today > endD)) {
+                expired++;
+                return;
+            }
+
             if (!groups[code]) groups[code] = [];
             groups[code].push({
                 barcode,
@@ -933,7 +953,7 @@
                 totalBarcodes++;
                 if (!productData[m.barcode]) return;
                 productData[m.barcode].bulk = {
-                    type: m.type,
+                    type: m.type || (members.length > 1 ? 'Mix and Match' : 'Bundle Sale'),
                     bulkName: m.bulkName,
                     siblings: members
                         .filter(x => x.barcode !== m.barcode)
@@ -943,15 +963,21 @@
             });
         });
 
-        if (totalBarcodes === 0) {
+        if (scanned === 0) {
             setBulkStatus('Không tìm thấy mã vạch hợp lệ nào trong file này.', 'err', 'i-alert');
+            return;
+        }
+
+        if (totalBarcodes === 0) {
+            setBulkStatus('File có dữ liệu nhưng không có chương trình nào đang chạy đúng hôm nay.', 'err', 'i-alert');
             return;
         }
 
         try {
             await store.setItem('kohnan_product_data', productData);
             hideStorageWarning();
-            setBulkStatus(`Đã ghép ${applied.toLocaleString('vi-VN')} mã vào ${Object.keys(groups).length.toLocaleString('vi-VN')} chương trình Mix and Match / Bundle Sale.`, 'ok', 'i-check');
+            const expiredNote = expired > 0 ? ` (bỏ qua ${expired.toLocaleString('vi-VN')} dòng đã hết hạn/chưa tới ngày)` : '';
+            setBulkStatus(`Đã ghép ${applied.toLocaleString('vi-VN')} mã vào ${Object.keys(groups).length.toLocaleString('vi-VN')} chương trình Mix and Match / Bundle Sale đang chạy hôm nay${expiredNote}.`, 'ok', 'i-check');
         } catch (err) {
             console.warn('Storage write failed', err);
             showStorageWarning('Đã ghép Mix and Match / Bundle Sale nhưng KHÔNG lưu được vào bộ nhớ trình duyệt. Dữ liệu sẽ mất khi tải lại trang.');
@@ -1088,27 +1114,60 @@
     // ví dụ "All_BD_25_02BANGENERGY@12K" -> giá 12.000đ, "SB COTTON PAD 99K3PCS" -> giá 99.000đ, số lượng 3.
     // Đọc số lượng đúng theo quy ước đặt tên chương trình của Kohnan — KHÔNG suy đoán theo số mã
     // trong nhóm Mix and Match (số mã trong nhóm chỉ là số hương vị/lựa chọn để đổi qua lại, không
-    // phải số lượng phải mua). Có 2 cách tên chương trình ghi số lượng, ưu tiên theo thứ tự:
-    //   1) Hậu tố rõ ràng "...NPCS" ngay trong tên, vd "SB COTTON PAD 99K3PCS" -> 3,
-    //      "DERMAYU MASK 49K5PCS" -> 5, "Kolmar 49K/2PCS" -> 2.
-    //   2) Mã số 1-2 chữ số gắn liền ngay trước tên sản phẩm (sau dấu "_", không có khoảng trắng),
+    // phải số lượng phải mua). unitPrice (tuỳ chọn) là giá bán hiện tại của chính mã đang tra cứu —
+    // dùng làm giá dự phòng cho kiểu "B{n}G{m}" khi tên không ghi giá bằng "...K".
+    // Có 3 cách tên chương trình ghi số lượng/giá, ưu tiên theo thứ tự:
+    //   1) Kiểu "B{n}G{m}" (vd "Kolmar Ginseng B2G1" -> mua 2 tính tiền 1): n = số lượng phải mua,
+    //      m = số lượng tính tiền. Tên kiểu này thường KHÔNG ghi giá bằng "...K" — giá hiển thị lấy
+    //      bằng m × giá bán hiện tại của chính mã đó (giá của m sản phẩm tính theo giá niêm yết).
+    //   2) Hậu tố rõ ràng "...NPCS" (hoặc biến thể "PC"/"SPCS"/"SPC"/"SP", dữ liệu gốc viết không
+    //      thống nhất) ngay trong tên, vd "SB COTTON PAD 99K3PCS" -> 3, "DERMAYU MASK 49K5PCS" -> 5,
+    //      "Kolmar 49K/2PCS" -> 2, "Eugica39K3SP" -> 3 (SP = viết tắt "sản phẩm").
+    //   3) Mã số 1-2 chữ số gắn liền ngay trước tên sản phẩm (sau dấu "_", không có khoảng trắng),
     //      vd "All_BD_25_02BANGENERGY@12K" -> 2, "All_MM_15_03DEO@99K" -> 3,
     //      "All_MM_25_03TARAMITUI@78K" -> 3, "All_BD_2SBJumboToiletPaper@69k" -> 2 (chỉ 1 chữ số,
-    //      KHÔNG bắt buộc phải đủ 2 chữ số — lỗi trước đây là bắt buộc đúng 2 chữ số nên bỏ sót
-    //      các mã chỉ có 1 chữ số như "_2SB..."). Số đứng trước đó (vd "25"/"15") là mã bộ phận/danh
-    //      mục, không phải số lượng — phân biệt được vì nó luôn có dấu "_" theo sau, còn mã số lượng
-    //      thì dính liền chữ cái đầu tên sản phẩm, không có dấu cách/gạch dưới ở giữa. Lấy theo cụm
-    //      khớp CUỐI CÙNG trong tên (gần tên sản phẩm/giá nhất) để tránh nhầm với mã danh mục phía trước.
-    // Nếu không có cả 2 tín hiệu trên thì KHÔNG đoán số lượng (trả về null), tránh hiện sai.
-    function parseBulkDeal(bulkName) {
+    //      KHÔNG bắt buộc phải đủ 2 chữ số). Số đứng trước đó (vd "25"/"15") là mã bộ phận/danh mục,
+    //      không phải số lượng — phân biệt được vì nó luôn có dấu "_" theo sau, còn mã số lượng thì
+    //      dính liền chữ cái đầu tên sản phẩm, không có dấu cách/gạch dưới ở giữa. Lấy theo cụm khớp
+    //      CUỐI CÙNG trong tên (gần tên sản phẩm/giá nhất) để tránh nhầm với mã danh mục phía trước.
+    // Nếu không đọc được số lượng theo cả 3 cách, hoặc không có giá (cả trong tên lẫn unitPrice dự
+    // phòng cho kiểu B/G) thì KHÔNG đoán (trả về null), tránh hiện sai.
+    function parseBulkDeal(bulkName, unitPrice) {
         if (!bulkName) return null;
         const name = String(bulkName);
-        const priceMatch = name.match(/(\d+(?:[.,]\d+)?)\s*K(?!G)/i);
-        if (!priceMatch) return null;
-        const price = parseFloat(priceMatch[1].replace(',', '.')) * 1000;
-        if (!price || price <= 0) return null;
 
-        const pcsMatch = name.match(/(\d+)\s*PCS/i);
+        // Giá luôn là cụm "digitK" CUỐI CÙNG trong tên (thường ngay sau dấu "@", ở cuối tên) — không
+        // lấy cụm đầu tiên vì mã danh mục/số lượng đứng trước có thể vô tình khớp dạng "digitK" khi
+        // tên sản phẩm bắt đầu bằng chữ K (vd "..._02KANES50G@199K" nếu lấy cụm đầu sẽ ra nhầm "02K"
+        // = 2.000đ thay vì đúng phải là "199K" = 199.000đ; tương tự "..._02KILALA@45K").
+        const priceMatches = [...name.matchAll(/(\d+(?:[.,]\d+)?)\s*K(?!G)/gi)];
+        let price = null;
+        if (priceMatches.length > 0) {
+            const p = parseFloat(priceMatches[priceMatches.length - 1][1].replace(',', '.')) * 1000;
+            if (p > 0) price = p;
+        }
+
+        const buyGetMatch = name.match(/\bB(\d+)G(\d+)\b/i);
+        if (buyGetMatch) {
+            const buyQty = parseInt(buyGetMatch[1], 10);
+            const payQty = parseInt(buyGetMatch[2], 10);
+            if (buyQty >= 2 && payQty >= 1 && payQty < buyQty) {
+                let dealPrice = price;
+                if (dealPrice === null) {
+                    const unit = Number(unitPrice);
+                    if (unit > 0) dealPrice = unit * payQty;
+                }
+                if (dealPrice !== null) {
+                    return { qty: buyQty, payQty, price: dealPrice, qtySource: 'buy-get' };
+                }
+            }
+        }
+
+        if (price === null) return null;
+
+        // Chấp nhận cả biến thể viết "PCS"/"PC"/"SPCS"/"SPC"/"SP" (dữ liệu gốc có lúc viết khác nhau,
+        // vd "99K2SPCS", "169K2SPC", "39K3SP") đều hiểu là số lượng sản phẩm.
+        const pcsMatch = name.match(/(\d+)\s*(?:S?PCS?|SP)/i);
         if (pcsMatch) {
             const qty = parseInt(pcsMatch[1], 10);
             if (qty >= 2) return { qty, price, qtySource: 'explicit' };
@@ -1158,18 +1217,28 @@
                 bulkType.innerText = p.bulk.bulkName ? `${p.bulk.type} — ${p.bulk.bulkName}` : p.bulk.type;
                 bulkGroup.style.display = 'block';
 
-                const deal = parseBulkDeal(p.bulk.bulkName);
+                const deal = parseBulkDeal(p.bulk.bulkName, p.price);
                 let dealHtml = '';
                 if (deal) {
-                    const note = deal.qtySource === 'prefix'
-                        ? '<div class="bulk-deal-note">* Số lượng lấy theo mã trong tên chương trình khuyến mãi.</div>'
-                        : '';
-                    // Luôn hiển thị theo đúng bản chất dữ liệu: mua đủ số lượng N thì được tính giá combo
-                    // cố định Z — "Mua Combo N PCS — Giá Zđ". KHÔNG diễn giải thành "tính tiền N-1" (kiểu
-                    // mua 1 tặng 1) vì đó là suy diễn không có căn cứ trong dữ liệu, kể cả khi N = 2
-                    // (vd Bundle Sale "2SBJumboToiletPaper@69k" là combo 2 giá 69.000đ, không phải kiểu
-                    // "mua 2 tính 1" — số tiền combo không nhất thiết bằng đúng giá 1 sản phẩm lẻ).
-                    const dealLabel = 'Mua Combo ' + deal.qty + ' PCS';
+                    // Mặc định hiển thị theo đúng bản chất dữ liệu: mua đủ số lượng N thì được tính giá
+                    // combo cố định Z — "Mua Combo N PCS — Giá Zđ". KHÔNG tự diễn giải thành "tính tiền
+                    // N-1" (kiểu mua 1 tặng 1) khi không có căn cứ, kể cả khi N = 2 (vd Bundle Sale
+                    // "2SBJumboToiletPaper@69k" là combo 2 giá 69.000đ, không phải "mua 2 tính 1" — số
+                    // tiền combo không nhất thiết bằng đúng giá 1 sản phẩm lẻ).
+                    // Riêng kiểu tên "B{n}G{m}" (vd "Kolmar Ginseng B2G1") THỰC SỰ là "mua n tính tiền m"
+                    // theo đúng quy ước đặt tên của Kohnan, nên hiển thị đúng theo kiểu đó, với giá lấy
+                    // bằng m × giá bán hiện tại nếu tên không tự ghi giá.
+                    let note = '';
+                    let dealLabel;
+                    if (deal.qtySource === 'buy-get') {
+                        dealLabel = 'Mua ' + deal.qty + ' Tính Tiền ' + deal.payQty;
+                        note = '<div class="bulk-deal-note">* Giá tính theo giá bán hiện tại của mã này, không phải giá ghi sẵn trong tên chương trình.</div>';
+                    } else {
+                        dealLabel = 'Mua Combo ' + deal.qty + ' PCS';
+                        note = deal.qtySource === 'prefix'
+                            ? '<div class="bulk-deal-note">* Số lượng lấy theo mã trong tên chương trình khuyến mãi.</div>'
+                            : '';
+                    }
                     dealHtml = '<div class="bulk-deal"><span class="bulk-deal-label">' + dealLabel + '</span><span class="bulk-deal-price">Giá ' + formatMoney(deal.price) + 'đ</span></div>' + note;
                 }
 
