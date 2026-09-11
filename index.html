@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -606,7 +605,6 @@
     <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
 </svg>
 
-
 </head>
 <body>
 <div class="container">
@@ -634,14 +632,14 @@
         <div id="statusPromo" class="status-msg"></div>
         <label style="margin-top:10px;">Mã cửa hàng cần lọc</label>
         <input type="text" id="storeCodeInput" value="1016" placeholder="Ví dụ: 1016">
-        <div class="field-hint">Chỉ áp dụng khuyến mãi đang chạy đúng ngày hôm nay và đúng cửa hàng này. Bỏ trống ô mã cửa hàng để lấy khuyến mãi ở mọi cửa hàng.</div>
+        <div class="field-hint">Chỉ áp dụng khuyến mãi đang chạy đúng ngày hôm nay và đúng cửa hàng này. Bỏ trống ô mã cửa hàng để lấy khuyến mãi ở mọi cửa hàng. Chỉ cần chọn file này 1 lần — phần mềm tự nhớ và tự áp dụng lại mỗi khi bạn tải file danh mục hàng hoá mới ở mục 1, không cần chọn lại.</div>
     </div>
 
     <div class="section">
         <label><svg class="icon"><use href="#i-layers"/></svg> 3. (Tuỳ chọn) Tải file Mix and Match / Bundle Sale (bulk_sale_list... — .csv / .xlsx)</label>
         <input type="file" id="bulkFile" accept=".csv, .txt, .xlsx, .xls">
         <div id="statusBulk" class="status-msg"></div>
-        <div class="field-hint">Các mã có cùng mã chương trình trong file là cùng một chương trình — Mix and Match cho phép đổi qua lại giữa các mã đó, Bundle Sale chỉ áp dụng cho đúng mã đó khi mua đủ số lượng. Phần mềm tự lọc theo ngày, chỉ lấy chương trình đang chạy đúng hôm nay (dựa theo Sale Start Date/Sale End Date trong file).</div>
+        <div class="field-hint">Các mã có cùng mã chương trình trong file là cùng một chương trình — Mix and Match cho phép đổi qua lại giữa các mã đó, Bundle Sale chỉ áp dụng cho đúng mã đó khi mua đủ số lượng. Phần mềm tự lọc theo ngày, chỉ lấy chương trình đang chạy đúng hôm nay (dựa theo Sale Start Date/Sale End Date trong file). Chỉ cần chọn file này 1 lần — phần mềm tự nhớ và tự áp dụng lại mỗi khi bạn tải file danh mục hàng hoá mới ở mục 1, không cần chọn lại. Bấm "Xoá Toàn Bộ Dữ Liệu Đã Lưu" bên dưới nếu muốn xoá cả 2 file tuỳ chọn này để chọn lại từ đầu.</div>
         <button class="secondary" onclick="clearData()" style="margin-top:12px;"><svg class="icon"><use href="#i-trash"/></svg> Xoá Toàn Bộ Dữ Liệu Đã Lưu</button>
     </div>
 
@@ -691,7 +689,7 @@
                 <li>Mục <b>2</b> (không bắt buộc): bấm "Chọn tệp", chọn file khuyến mãi (sale_list.csv hoặc .xlsx), kiểm tra đúng mã cửa hàng ở ô bên dưới (mặc định 1016). Phần mềm tự lọc khuyến mãi đang chạy đúng hôm nay cho cửa hàng đó.</li>
                 <li>Mục <b>3</b> (không bắt buộc): bấm "Chọn tệp", chọn file Mix and Match / Bundle Sale (bulk_sale_list...csv hoặc .xlsx). Phần mềm tự nhóm các mã theo mã chương trình, tự lọc đúng chương trình đang chạy hôm nay, và hiện rõ mã nào Mix and Match được với mã nào khi tra cứu.</li>
             </ol>
-            <div class="guide-note">Luôn tải mục 1 trước, rồi đến mục 2 và mục 3. Nên tải lại cả 3 file mỗi ngày để số liệu tồn kho, giá, khuyến mãi và Mix and Match/Bundle Sale luôn mới nhất.</div>
+            <div class="guide-note">Luôn tải mục 1 trước, rồi đến mục 2 và mục 3. Nên tải lại mục 1 (danh mục hàng hoá) mỗi ngày để tồn kho và giá luôn mới nhất — mục 2 và mục 3 chỉ cần chọn 1 lần, phần mềm tự nhớ file đã chọn và tự áp dụng lại mỗi khi mục 1 được tải mới, không cần chọn lại. Chỉ cần chọn lại mục 2/3 khi chính các file khuyến mãi/Mix and Match/Bundle Sale đó có bản mới (chương trình thay đổi). Muốn xoá hết để chọn lại từ đầu thì bấm "Xoá Toàn Bộ Dữ Liệu Đã Lưu".</div>
 
             <h3><span class="step-no">3</span> Tra cứu sản phẩm</h3>
             <ul>
@@ -722,6 +720,12 @@
     let scanning = false;
     let lastScanCode = null;
     let lastScanTime = 0;
+    // Bản ghi thô (rows) của file khuyến mãi và file Mix and Match/Bundle Sale đã tải gần nhất —
+    // lưu lại để tự động áp dụng lại mỗi khi tải file danh mục hàng hoá mới (bước 1), vì bước 1
+    // luôn làm mới toàn bộ productData. Nhờ vậy người dùng chỉ cần chọn file 2/3 một lần, không
+    // phải chọn lại mỗi ngày chỉ vì tải file tồn kho/giá mới.
+    let cachedPromoRows = null;
+    let cachedBulkRows = null;
 
     // Lưu trữ bằng IndexedDB (qua localForage) thay vì localStorage — localStorage chỉ
     // cho phép khoảng 5-10MB mỗi trang nên với file có hàng chục nghìn mã sản phẩm sẽ
@@ -789,6 +793,26 @@
         } catch (e) {
             console.error('Error loading saved data', e);
         }
+
+        try {
+            cachedPromoRows = await store.getItem('kohnan_promo_rows');
+            const promoFileName = await store.getItem('kohnan_promo_filename');
+            if (cachedPromoRows && cachedPromoRows.length) {
+                setPromoStatus(`Đã lưu file khuyến mãi trước đó${promoFileName ? ' (' + promoFileName + ')' : ''} — không cần chọn lại, sẽ tự áp dụng khi tải file danh mục mới.`, 'ok', 'i-check');
+            }
+        } catch (e) {
+            console.error('Error loading cached promo rows', e);
+        }
+
+        try {
+            cachedBulkRows = await store.getItem('kohnan_bulk_rows');
+            const bulkFileName = await store.getItem('kohnan_bulk_filename');
+            if (cachedBulkRows && cachedBulkRows.length) {
+                setBulkStatus(`Đã lưu file Mix and Match / Bundle Sale trước đó${bulkFileName ? ' (' + bulkFileName + ')' : ''} — không cần chọn lại, sẽ tự áp dụng khi tải file danh mục mới.`, 'ok', 'i-check');
+            }
+        } catch (e) {
+            console.error('Error loading cached bulk rows', e);
+        }
     });
 
     document.getElementById('csvFile').addEventListener('change', function (e) {
@@ -848,6 +872,7 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    cachePromoRows(rows, file.name);
                     processSaleList(rows);
                 } catch (err) {
                     console.error('Error reading promo Excel file', err);
@@ -861,10 +886,21 @@
                 header: true,
                 delimiter: ',',
                 skipEmptyLines: true,
-                complete: function (results) { processSaleList(results.data); }
+                complete: function (results) {
+                    cachePromoRows(results.data, file.name);
+                    processSaleList(results.data);
+                }
             });
         }
     });
+
+    // Lưu lại rows thô của file khuyến mãi (không chờ hoàn tất, không quan trọng thứ tự với
+    // processSaleList vì khác key lưu trữ) để tự động áp dụng lại sau này mà không cần chọn lại file.
+    function cachePromoRows(rows, fileName) {
+        cachedPromoRows = rows;
+        store.setItem('kohnan_promo_rows', rows).catch(e => console.warn('Không lưu được cache file khuyến mãi', e));
+        store.setItem('kohnan_promo_filename', fileName).catch(() => {});
+    }
 
     document.getElementById('bulkFile').addEventListener('change', function (e) {
         const file = e.target.files[0];
@@ -889,6 +925,7 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    cacheBulkRows(rows, file.name);
                     processBulkSale(rows);
                 } catch (err) {
                     console.error('Error reading bulk sale Excel file', err);
@@ -902,10 +939,21 @@
                 header: true,
                 delimiter: ',',
                 skipEmptyLines: true,
-                complete: function (results) { processBulkSale(results.data); }
+                complete: function (results) {
+                    cacheBulkRows(results.data, file.name);
+                    processBulkSale(results.data);
+                }
             });
         }
     });
+
+    // Lưu lại rows thô của file Mix and Match/Bundle Sale để tự động áp dụng lại sau này mà
+    // không cần chọn lại file (xem cachePromoRows ở trên).
+    function cacheBulkRows(rows, fileName) {
+        cachedBulkRows = rows;
+        store.setItem('kohnan_bulk_rows', rows).catch(e => console.warn('Không lưu được cache file bulk sale', e));
+        store.setItem('kohnan_bulk_filename', fileName).catch(() => {});
+    }
 
     async function processBulkSale(rows) {
         // Nhóm các dòng theo mã chương trình — các mã cùng nhóm là cùng một chương trình
@@ -1082,13 +1130,31 @@
             showStorageWarning('Đã đọc được file (' + count.toLocaleString('vi-VN') + ' mã) nhưng KHÔNG lưu được vào bộ nhớ trình duyệt (' + (err && err.message ? err.message : 'lỗi không xác định') + '). Bạn vẫn tra cứu được cho tới khi tải lại trang, nhưng dữ liệu sẽ mất sau khi F5.');
             setStatus(`Đã đọc file nhưng chưa lưu được (${count.toLocaleString('vi-VN')} mã, dùng tạm trong phiên này)`, 'err', 'i-alert');
         }
+
+        // Tự động áp dụng lại khuyến mãi / Mix and Match-Bundle Sale đã lưu từ lần tải trước (nếu có),
+        // vì tải lại file danh mục hàng hoá (bước 1) sẽ làm mới toàn bộ productData — không bắt người
+        // dùng phải chọn lại file 2 và 3 mỗi lần chỉ để cập nhật tồn kho/giá.
+        if (cachedPromoRows && cachedPromoRows.length) {
+            await processSaleList(cachedPromoRows);
+        }
+        if (cachedBulkRows && cachedBulkRows.length) {
+            await processBulkSale(cachedBulkRows);
+        }
     }
 
     async function clearData() {
         await store.removeItem('kohnan_product_data');
         await store.removeItem('kohnan_data_timestamp');
+        await store.removeItem('kohnan_promo_rows');
+        await store.removeItem('kohnan_promo_filename');
+        await store.removeItem('kohnan_bulk_rows');
+        await store.removeItem('kohnan_bulk_filename');
         productData = {};
+        cachedPromoRows = null;
+        cachedBulkRows = null;
         setStatus('Đã xoá dữ liệu đã lưu.', 'ok', 'i-check');
+        setPromoStatus('', '', '');
+        setBulkStatus('', '', '');
         document.getElementById('resultArea').style.display = 'none';
     }
 
@@ -1356,6 +1422,5 @@
         setTimeout(() => el.remove(), 2500);
     }
 </script>
-
 </body>
 </html>
